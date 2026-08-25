@@ -3,10 +3,8 @@
 ## Vimari
 _Keyboard Shortcuts extension for Safari_
 
-[![Download on the Mac App Store](assets/Download_on_the_Mac_App_Store_Badge_US.svg)](https://apps.apple.com/us/app/vimari/id1480933944?ls=1&mt=12)
-
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/televator-apps/vimari)
-![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/televator-apps/vimari?include_prereleases&label=pre%20release)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/cjvalera/vimari)
+![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/cjvalera/vimari?include_prereleases&label=pre%20release)
 
 Vimari is a Safari extension that provides vim style keyboard based navigation.
 This lets you control Safari from your keyboard instead of having to use your mouse to open links, scroll, etc.
@@ -18,53 +16,23 @@ best components of vimium and adapting them to Safari.
 
 <img src="assets/screenshot.png"></img>
 
-## Releases
-
-### Safari 12 and above
-
-[![Download on the Mac App Store](assets/Download_on_the_Mac_App_Store_Badge_US.svg)](https://apps.apple.com/us/app/vimari/id1480933944?ls=1&mt=12)
-
-### Safari 11 and below (DEPRECATED)
- - [v1.13](https://github.com/guyht/vimari/releases/tag/v1.13)
- - [v1.12](https://github.com/guyht/vimari/releases/tag/v1.12)
- - [v1.11](https://github.com/guyht/vimari/releases/tag/v1.11)
- - [v1.10](https://github.com/guyht/vimari/releases/tag/v1.10)
- - [v1.9](https://github.com/guyht/vimari/releases/tag/v1.9)
-
 ## Installation
 
-### Safari 12 and above (macOS Mojave or above)
+Vimari 3 requires macOS 14 or later and Safari 26.2 or later.
 
-#### Mac App Store
-
-1. [Download Vimari](https://apps.apple.com/us/app/vimari/id1480933944?ls=1&mt=12) for free from the Mac App Store
-2. Launch Vimari.app
-3. Click "Open in Safari Extensions Preferences", Safari's Extension Preferences should open
-4. Make sure that the checkbox for the Vimari extension is ticked
-5. Go back to Vimari.app and press the reload button to check the status of the app. If it says "Enabled" then it is ready.
-6. You may need to relaunch Safari for the extension to work
-
-#### Prebuilt binaries
-
-1. Download the [latest version](https://github.com/guyht/vimari/releases/latest) of Vimari
-2. Unzip it
-3. Move it to your `/Applications` folder
-4. Launch Vimari.app
-5. Click "Open in Safari Extensions Preferences...", Safari's Extension Preferences should open
-6. Make sure that the checkbox for the Vimari extension is ticked
-7. Go back to Vimari.app and press the reload button to check the status of the app. If it says "Enabled" then it is ready.
-8. You may need to relaunch Safari for the extension to work
-
-
-
-### Safari 11 (legacy Safari Extension method)
-
-[Download the Vimari 1.13](https://github.com/guyht/vimari/releases/tag/v1.13) and double-click
-the file.
+1. Build and run `Vimari.xcodeproj` in Xcode after selecting your signing team for both targets.
+2. Launch Vimari and click **Open in Safari Extensions Preferences**.
+3. Enable Vimari and grant it access to the websites where you want keyboard navigation.
+4. Add Vimari to Safari's toolbar. Clicking its toolbar button opens the settings page.
 
 ## Usage
 
 ### Settings
+Open Vimari's extension settings from its Safari toolbar button or from Safari's
+Extensions settings. Configuration remains JSON and is stored by Safari. The
+settings page can save, reset, import, and export `userSettings.json` files.
+Changes apply to open pages without a reload.
+
 **Modifier** - Modifier key to hold down with your action key. If
 you leave it blank you don't need to hold down anything (default
 setting).

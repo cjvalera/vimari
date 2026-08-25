@@ -15,6 +15,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     @IBAction func openHelpUrl(_ sender: Any) {
-        NSWorkspace.shared.open(URL(string: "https://github.com/televator-apps/vimari#usage")!)
+        NSWorkspace.shared.open(URL(string: "https://github.com/cjvalera/vimari#usage")!)
     }
 }

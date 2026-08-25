@@ -2,9 +2,14 @@
   "name": "vimari",
   "author": "Guy Halford-Thompson",
   "license": "MIT",
-  "homepage": "https://github.com/guyht/vimari",
+  "homepage": "https://github.com/cjvalera/vimari",
+  "scripts": {
+    "test": "jest --runInBand",
+    "test:watch": "jest --watch"
+  },
   "devDependencies": {
     "expect.js": "^0.3.1",
-    "jest": "^24.9.0"
+    "jest": "^30.4.2",
+    "jest-environment-jsdom": "^30.4.1"
   }
 }

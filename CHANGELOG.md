@@ -1,6 +1,13 @@
 Changelog
 -------------
 
+### 3.0.0
+
+* Replace the legacy Safari App Extension with a Manifest V3 Safari Web Extension.
+* Move tab actions to standard WebExtension APIs and settings to `browser.storage.local`.
+* Add a JSON settings page with validation, reset, import, and export support.
+* Require macOS 14 and Safari 26.2 or later.
+
 ### 2.1.1
 
 * Rebuild for Apple Silicon

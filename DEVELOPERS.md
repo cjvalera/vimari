@@ -6,17 +6,30 @@
 
 1. Clone the repository:
    ```bash
-   git clone git@github.com:televator-apps/vimari.git
+   git clone git@github.com:cjvalera/vimari.git
    ```
-2. Open `Vimari.xcodeproj` with Xcode.
-3. [Set your signing team](https://help.apple.com/xcode/mac/current/#/dev23aab79b4) for both targets (Vimari and Vimari Extension).
-4. Run the project (<kbd>⌘</kbd>+<kbd>R</kbd>).
+2. Install JavaScript dependencies with `npm ci`.
+3. Open `Vimari.xcodeproj` with Xcode 27 or later.
+4. [Set your signing team](https://help.apple.com/xcode/mac/current/#/dev23aab79b4) for both targets (Vimari and Vimari Extension).
+5. Run the project (<kbd>⌘</kbd>+<kbd>R</kbd>), then enable Vimari and grant website access in Safari's Extensions settings.
 
-You might have to reload the website you had open for the changes to take effect. Also check your configuration file as it currently does not get upgraded automatically.
+Use `npm test` for JavaScript tests. WebExtension resources can also be loaded
+temporarily from the `Vimari Extension` folder while iterating in Safari.
+
+### Local build
+
+Run `make local-build` to create an ad-hoc signed development build at
+`build/local/Vimari.app`. This uses Xcode's **Sign to Run Locally** identity, so
+it does not require an Apple developer team. Run `make local-run` to build and
+launch the containing app, which registers the embedded extension with Safari.
+
+Before enabling an ad-hoc signed build, open Safari's developer settings and
+turn on **Allow unsigned extensions**. Safari resets that setting whenever it
+quits. Then enable Vimari from Safari's Extensions settings.
 
 ### Linting & Formatting
 
-Code linting and formatting will be implemented in [#193](https://github.com/televator-apps/vimari/pull/193).
+The repository does not currently enforce an automatic formatter or linter.
 
 ## Contributing
 

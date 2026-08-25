@@ -1,4 +1,8 @@
-# Installation notes for Safari version 12 and 13
+# Legacy installation notes for Safari version 12 and 13
+
+> These instructions apply only to Vimari 2's retired Safari App Extension.
+> Vimari 3 uses a Manifest V3 Safari Web Extension and requires Safari 26.2 or
+> later. See the repository README for current installation instructions.
 
 A new version of macOS is being released, macOS Mojave, and it's expected to
 have a stable release out September or October of 2018. With that new version

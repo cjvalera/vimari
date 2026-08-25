@@ -212,7 +212,7 @@ DQ
                                                 <subviews>
                                                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="aT9-JG-1sF">
                                                         <rect key="frame" x="-7" y="17" width="190" height="32"/>
-                                                        <buttonCell key="cell" type="push" title="Open Configuration File" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="KIt-L8-6y7">
+                                                        <buttonCell key="cell" type="push" title="Open Vimari Settings in Safari" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="KIt-L8-6y7">
                                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                             <font key="font" metaFont="system"/>
                                                         </buttonCell>
@@ -222,7 +222,7 @@ DQ
                                                     </button>
                                                     <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Sb9-er-HUX">
                                                         <rect key="frame" x="-2" y="0.0" width="299" height="16"/>
-                                                        <textFieldCell key="cell" title="Note: Reload the page after saving your changes" id="V9g-Vm-kVR">
+                                                        <textFieldCell key="cell" title="Click Settings in Safari to edit or import JSON" id="V9g-Vm-kVR">
                                                             <font key="font" metaFont="system"/>
                                                             <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
                                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>

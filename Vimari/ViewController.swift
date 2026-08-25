@@ -7,9 +7,7 @@ class ViewController: NSViewController {
     @IBOutlet var spinner: NSProgressIndicator!
     
     private enum Constant {
-        static let extensionIdentifier = "net.televator.Vimari.SafariExtension"
-        static let openSettings = "openSettings"
-        static let resetSettings = "resetSettings"
+        static let extensionIdentifier = "com.christianvalera.Vimari.Extension"
     }
 
     func refreshExtensionStatus() {
@@ -41,7 +39,7 @@ class ViewController: NSViewController {
             }
         } else {
             NSLog("SFSafariServices not available")
-            extensionStatus.stringValue = "Unavailable, Vimari requires Safari 10 or greater."
+            extensionStatus.stringValue = "Unavailable, Vimari requires Safari 26.2 or greater."
             spinner.stopAnimation(self)
         }
     }
@@ -66,32 +64,6 @@ class ViewController: NSViewController {
     }
     
     @IBAction func openSettingsAction(_ sender: Any) {
-        dispatchOpenSettings()
-    }
-    
-    @IBAction func resetSettingsAction(_ sender: Any) {
-        dispatchResetSettings()
-    }
-    
-    func dispatchOpenSettings() {
-        SFSafariApplication.dispatchMessage(
-            withName: Constant.openSettings,
-            toExtensionWithIdentifier: Constant.extensionIdentifier,
-            userInfo: nil) { (error) in
-                if let error = error {
-                    print(error.localizedDescription)
-                }
-        }
-    }
-    
-    func dispatchResetSettings() {
-        SFSafariApplication.dispatchMessage(
-            withName: Constant.resetSettings,
-            toExtensionWithIdentifier: Constant.extensionIdentifier,
-            userInfo: nil) { (error) in
-                if let error = error {
-                    print(error.localizedDescription)
-                }
-        }
+        openSafariExtensionPreferences(nil)
     }
 }

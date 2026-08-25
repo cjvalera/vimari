@@ -1,0 +1,59 @@
+const VimariSettings = require("../Vimari Extension/js/settings.js");
+const defaults = require("../Vimari Extension/json/defaultSettings.json");
+
+describe("Vimari settings", () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+        __vimariMocks.storedSettings.settings = JSON.parse(JSON.stringify(defaults));
+    });
+
+    it("merges partial settings with defaults and nested bindings", () => {
+        const merged = VimariSettings.merge(defaults, {
+            scrollSize: 300,
+            bindings: { scrollDown: "n" }
+        });
+
+        expect(merged.scrollSize).toBe(300);
+        expect(merged.bindings.scrollDown).toBe("n");
+        expect(merged.bindings.scrollUp).toBe(defaults.bindings.scrollUp);
+    });
+
+    it("accepts strings and arrays for bindings", () => {
+        const result = VimariSettings.validate({
+            bindings: {
+                scrollDown: ["j", "ctrl+j"]
+            }
+        }, defaults);
+
+        expect(result.valid).toBe(true);
+        expect(result.value.bindings.scrollDown).toEqual(["j", "ctrl+j"]);
+    });
+
+    it("rejects invalid field types and empty bindings", () => {
+        const result = VimariSettings.validate({
+            smoothScroll: "yes",
+            bindings: { scrollDown: [] }
+        }, defaults);
+
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain("smoothScroll must be true or false.");
+        expect(result.errors[1]).toContain("bindings.scrollDown");
+    });
+
+    it("rejects a non-object bindings value", () => {
+        const result = VimariSettings.validate({ bindings: [] }, defaults);
+
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain("bindings must be a JSON object.");
+    });
+
+    it("saves validated settings and resets defaults", async () => {
+        const saved = await VimariSettings.save({ scrollSize: 220 });
+        expect(saved.scrollSize).toBe(220);
+        expect(browser.storage.local.set).toHaveBeenCalledWith({ settings: saved });
+
+        const reset = await VimariSettings.reset();
+        expect(reset).toEqual(defaults);
+        expect(browser.storage.local.set).toHaveBeenLastCalledWith({ settings: defaults });
+    });
+});

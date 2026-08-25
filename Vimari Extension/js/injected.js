@@ -26,7 +26,8 @@ var topWindow = (window.top === window),
 	insertMode = false,
 	shiftKeyToggle = false,
 	hudDuration = 5000,
-    extensionCommunicator = SafariExtensionCommunicator(messageHandler);
+    sitePropagationHandler = null,
+    extensionCommunicator = WebExtensionCommunicator();
 
 var actionMap = {
 	'hintToggle' : function() {
@@ -222,7 +223,10 @@ function executeAction(actionName) {
 
 function unbindKeyCodes() {
 	Mousetrap.reset();
-    document.removeEventListener("keydown", stopSitePropagation);
+    if (sitePropagationHandler !== null) {
+        document.removeEventListener("keydown", sitePropagationHandler, true);
+        sitePropagationHandler = null;
+    }
 }
 
 // Returns all keys bound in the settings.
@@ -252,23 +256,21 @@ function boundKeys() {
 // Stops propagation of keyboard events in normal mode. Adding this
 // callback to the document using the useCapture flag allows us to
 // prevent custom key behaviour implemented by the underlying website.
-function stopSitePropagation() {
-    return function (e) {
-        if (insertMode) {
-            // Never stop propagation in insert mode.
-            return
-        }
+function stopSitePropagation(e) {
+    if (insertMode) {
+        // Never stop propagation in insert mode.
+        return
+    }
 
-        if (settings.transparentBindings === true) {
-            if (boundKeys().has(e.key) && !isActiveElementEditable()) {
-                // If we are in normal mode with transparentBindings enabled we
-                // should only stop propagation in an editable element or if the
-                // key is bound to a Vimari action.
-                e.stopPropagation()
-            }
-        } else if (!isActiveElementEditable()) {
+    if (settings.transparentBindings === true) {
+        if (boundKeys().has(e.key) && !isActiveElementEditable()) {
+            // If we are in normal mode with transparentBindings enabled we
+            // should only stop propagation in an editable element or if the
+            // key is bound to a Vimari action.
             e.stopPropagation()
         }
+    } else if (!isActiveElementEditable()) {
+        e.stopPropagation()
     }
 }
 
@@ -334,33 +336,31 @@ function isEditable(target) {
 function isEmbed(element) { return ["EMBED", "OBJECT"].indexOf(element.tagName) > 0; }
 
 
-// ==========================
-// Message handling functions
-// ==========================
-
-function messageHandler(event){
-    if (event.name == "updateSettingsEvent") {
-        setSettings(event.message);
-    }
-}
-
-/*
- * Callback to pass settings to injected script
- */
 function setSettings(msg) {
 	settings = msg;
 	activateExtension(settings);
 }
 
 function activateExtension(settings) {
+    deactivateExtension();
+
     if ((typeof settings != "undefined") &&
         isExcludedUrl(settings.excludedUrls, document.URL)) {
         return;
     }
 
     // Stop keydown propagation
-    document.addEventListener("keydown", stopSitePropagation(), true);
+    extensionActive = true;
+    sitePropagationHandler = stopSitePropagation;
+    document.addEventListener("keydown", sitePropagationHandler, true);
     bindKeyCodesToActions(settings);
+}
+
+function deactivateExtension() {
+    extensionActive = false;
+    insertMode = false;
+    deactivateLinkHintsMode();
+    unbindKeyCodes();
 }
 
 function isExcludedUrl(storedExcludedUrls, currentUrl) {
@@ -406,7 +406,12 @@ function inIframe () {
 }
 
 if(!inIframe()){
-    extensionCommunicator.requestSettingsUpdate()
+    VimariSettings.load()
+        .then(setSettings)
+        .catch(function (error) {
+            console.error("Unable to load Vimari settings:", error);
+        });
+    VimariSettings.subscribe(setSettings);
 }
                                  
 // Export to make it testable
