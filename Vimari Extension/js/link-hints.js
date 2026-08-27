@@ -14,23 +14,32 @@ var hintKeystrokeQueue = [];
 var linkHintsModeActivated = false;
 var shouldOpenLinkHintInNewTab = false;
 var shouldOpenLinkHintWithQueue = false;
+var shouldCopyLinkHintUrl = false;
 // Whether link hint's "open in current/new tab" setting is currently toggled 
 var openLinkModeToggle = false;
 // Whether we have added to the page the CSS needed to display link hints.
 var linkHintsCssAdded = false;
 
 // We need this as a top-level function because our command system doesn't yet support arguments.
-function activateLinkHintsModeToOpenInNewTab() { activateLinkHintsMode(true, false); }
+function activateLinkHintsModeToOpenInNewTab() { activateLinkHintsMode(true, false, false); }
 
-function activateLinkHintsModeWithQueue() { activateLinkHintsMode(true, true); }
+function activateLinkHintsModeWithQueue() { activateLinkHintsMode(true, true, false); }
 
-function activateLinkHintsMode(openInNewTab, withQueue) {
+function activateLinkHintsModeToCopyUrl() { activateLinkHintsMode(false, false, true); }
+
+function activateLinkHintsMode(openInNewTab, withQueue, copyUrl) {
   if (!linkHintsCssAdded)
     addCssToPage(linkHintCss); // linkHintCss is declared by vimiumFrontend.js
   linkHintCssAdded = true;
   linkHintsModeActivated = true;
   setOpenLinkMode(openInNewTab, withQueue);
-  buildLinkHints();
+  shouldCopyLinkHintUrl = Boolean(copyUrl);
+  if (!buildLinkHints()) {
+    linkHintsModeActivated = false;
+    shouldCopyLinkHintUrl = false;
+    if (typeof overlays !== "undefined") overlays.showStatus("No links are available in the viewport.", "error");
+    return;
+  }
   document.addEventListener("keydown", onKeyDownInLinkHintsMode, true);
   document.addEventListener("keyup", onKeyUpInLinkHintsMode, true);
 }
@@ -46,6 +55,8 @@ function setOpenLinkMode(openInNewTab, withQueue) {
  */
 function buildLinkHints() {
   var visibleElements = getVisibleClickableElements();
+  if (visibleElements.length === 0)
+    return false;
 
   // Initialize the number used to generate the character hints to be as many digits as we need to
   // highlight all the links on the page; we don't want some link hints to have more chars than others.
@@ -65,6 +76,7 @@ function buildLinkHints() {
   for (var i = 0; i < hintMarkers.length; i++)
     hintMarkerContainingDiv.appendChild(hintMarkers[i]);
   document.body.appendChild(hintMarkerContainingDiv);
+  return true;
 }
 
 function logXOfBase(x, base) { return Math.log(x) / Math.log(base); }
@@ -84,6 +96,8 @@ function getVisibleClickableElements() {
   for (var i = 0; i < elements.length; i++) {
     var element = elements[i];
 
+    if (shouldCopyLinkHintUrl && !element.href)
+      continue;
     var selectedRect = getFirstVisibleRect(element);
     if (selectedRect) {
       visibleElements.push(selectedRect);
@@ -220,7 +234,6 @@ function isVisible(element, clientRect) {
 }
 
 function onKeyDownInLinkHintsMode(event) {
-  console.log("-- key down pressed --")
   if (event.keyCode === keyCodes.shiftKey && !openLinkModeToggle) {
     // Toggle whether to open link in a new or current tab.
     setOpenLinkMode(!shouldOpenLinkHintInNewTab, shouldOpenLinkHintWithQueue);
@@ -281,10 +294,16 @@ function updateLinkHints() {
       matchedLink.setSelectionRange(matchedLink.value.length, matchedLink.value.length);
       deactivateLinkHintsMode();
     } else {
+      if (shouldCopyLinkHintUrl) {
+        clipboardController.copy(matchedLink.href, 'Link URL');
+        matchedLink.focus();
+        deactivateLinkHintsMode();
+        return;
+      }
       // When we're opening the link in the current tab, don't navigate to the selected link immediately;
       // we want to give the user some feedback depicting which link they've selected by focusing it.
       if (shouldOpenLinkHintWithQueue) {
-        simulateClick(matchedLink, false);
+        simulateClick(matchedLink, true);
         resetLinkHintsMode();
       } else if (shouldOpenLinkHintInNewTab) {
         simulateClick(matchedLink, true);
@@ -353,7 +372,6 @@ function numberToHintString(number, numHintDigits) {
 
 function simulateClick(link, openInNewTab) {
   if (openInNewTab) {
-    console.log("-- Open link in new tab --");
     extensionCommunicator.requestOpenLinkInBackground(link.href);
   } else {
     link.click();
@@ -373,6 +391,7 @@ function deactivateLinkHintsMode() {
   document.removeEventListener("keydown", onKeyDownInLinkHintsMode, true);
   document.removeEventListener("keyup", onKeyUpInLinkHintsMode, true);
   linkHintsModeActivated = false;
+  shouldCopyLinkHintUrl = false;
 }
 
 function resetLinkHintsMode() {
@@ -404,4 +423,24 @@ function createMarkerFor(link, linkHintNumber, linkHintDigits) {
 
   marker.clickableItem = link.element;
   return marker;
+}
+
+if (typeof module !== "undefined") {
+  module.exports = {
+    activateLinkHintsMode: activateLinkHintsMode,
+    activateLinkHintsModeToCopyUrl: activateLinkHintsModeToCopyUrl,
+    activateLinkHintsModeWithQueue: activateLinkHintsModeWithQueue,
+    deactivateLinkHintsMode: deactivateLinkHintsMode,
+    onKeyDownInLinkHintsMode: onKeyDownInLinkHintsMode,
+    updateLinkHints: updateLinkHints
+  };
+  global.activateLinkHintsMode = activateLinkHintsMode;
+  global.activateLinkHintsModeToCopyUrl = activateLinkHintsModeToCopyUrl;
+  global.activateLinkHintsModeWithQueue = activateLinkHintsModeWithQueue;
+  global.deactivateLinkHintsMode = deactivateLinkHintsMode;
+  Object.defineProperty(global, "linkHintsModeActivated", {
+    configurable: true,
+    get: function () { return linkHintsModeActivated; },
+    set: function (value) { linkHintsModeActivated = value; }
+  });
 }
