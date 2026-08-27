@@ -27,6 +27,22 @@ else
   platform = "Windows";
 
 function getKeyChar(event) {
+    // Modern WebExtensions expose KeyboardEvent.key in both Safari and Orion.
+    // Keep the keyIdentifier path below for older Safari builds.
+    if (typeof event.key === "string" && event.key.length > 0) {
+        var modernKey = event.key.toLowerCase();
+        var modernAliases = {
+          arrowleft: "left",
+          arrowright: "right",
+          arrowup: "up",
+          arrowdown: "down"
+        };
+        return modernAliases[modernKey] || modernKey;
+    }
+
+    if (typeof event.keyIdentifier !== "string")
+        return "";
+
     // Not a letter
     if (event.keyIdentifier.slice(0, 2) !== "U+") {
         // Named key
@@ -58,6 +74,17 @@ function isPrimaryModifierKey(event) {
 }
 
 function isEscape(event) {
-  return event.keyCode === keyCodes.ESC ||
+  return event.key === "Escape" || event.key === "Esc" || event.keyCode === keyCodes.ESC ||
     (event.ctrlKey && getKeyChar(event) === '['); // c-[ is mapped to ESC in Vim by default.
+}
+
+if (typeof module !== "undefined") {
+  module.exports = {
+    getKeyChar: getKeyChar,
+    isEscape: isEscape,
+    keyCodes: keyCodes
+  };
+  global.getKeyChar = getKeyChar;
+  global.isEscape = isEscape;
+  global.keyCodes = keyCodes;
 }
