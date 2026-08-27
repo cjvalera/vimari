@@ -1,4 +1,4 @@
-.PHONY: all deps test test-watch local-build local-run
+.PHONY: all deps test test-watch local-clean local-build local-run
 
 NPM=$(shell which npm)
 XCODEBUILD?=xcrun xcodebuild
@@ -20,7 +20,17 @@ test:
 test-watch:
 	@$(NPM) run test:watch
 
-local-build:
+local-clean:
+	@$(XCODEBUILD) \
+		-project "$(XCODE_PROJECT)" \
+		-scheme "$(XCODE_SCHEME)" \
+		-configuration "$(LOCAL_CONFIGURATION)" \
+		-destination 'platform=macOS' \
+		-derivedDataPath "$(LOCAL_DERIVED_DATA_DIR)" \
+		CONFIGURATION_BUILD_DIR="$(LOCAL_BUILD_DIR)" \
+		clean
+
+local-build: local-clean
 	@$(XCODEBUILD) \
 		-project "$(XCODE_PROJECT)" \
 		-scheme "$(XCODE_SCHEME)" \
