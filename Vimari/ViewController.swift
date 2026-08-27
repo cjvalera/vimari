@@ -39,7 +39,7 @@ class ViewController: NSViewController {
             }
         } else {
             NSLog("SFSafariServices not available")
-            extensionStatus.stringValue = "Unavailable, Vimari requires Safari 26.2 or greater."
+            extensionStatus.stringValue = "Unavailable, Vimari+ requires Safari 26.2 or greater."
             spinner.stopAnimation(self)
         }
     }

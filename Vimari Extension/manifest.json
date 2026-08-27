@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Vimari",
+  "name": "Vimari+",
   "description": "Adds Vim-style keyboard navigation to Safari.",
   "version": "3.0.0",
   "icons": {
@@ -32,7 +32,7 @@
     }
   ],
   "action": {
-    "default_title": "Vimari Settings",
+    "default_title": "Vimari+ Settings",
     "default_icon": {
       "16": "images/toolbar-icon-16.png",
       "32": "images/toolbar-icon-32.png"

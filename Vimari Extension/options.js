@@ -43,7 +43,7 @@
     });
 
     document.getElementById("resetButton").addEventListener("click", async function () {
-        if (!window.confirm("Reset all Vimari settings to their defaults?")) {
+        if (!window.confirm("Reset all Vimari+ settings to their defaults?")) {
             return;
         }
 

@@ -29,9 +29,9 @@ If applicable, add screenshots to help explain your problem.
 
 MACOS=$(sw_vers | grep "ProductVersion" | cut -f 2)
 SAFARI=$(mdls -raw -name kMDItemVersion /Applications/Safari.app)
-VIMARI=$(mdls -raw -name kMDItemVersion /Applications/Vimari.app)
+VIMARI=$(mdls -raw -name kMDItemVersion /Applications/Vimari+.app)
 
-printf -- "- macOS version: %s\n- Safari version: %s\n- Vimari version: %s\n" "$MACOS" "$SAFARI" "$VIMARI"
+printf -- "- macOS version: %s\n- Safari version: %s\n- Vimari+ version: %s\n" "$MACOS" "$SAFARI" "$VIMARI"
 
 -->
 

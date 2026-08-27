@@ -7,7 +7,7 @@ XCODE_SCHEME?=Vimari
 LOCAL_CONFIGURATION?=Debug
 LOCAL_BUILD_DIR?=$(CURDIR)/build/local
 LOCAL_DERIVED_DATA_DIR?=$(CURDIR)/build/DerivedData
-LOCAL_APP=$(LOCAL_BUILD_DIR)/Vimari.app
+LOCAL_APP=$(LOCAL_BUILD_DIR)/Vimari+.app
 
 all: deps
 

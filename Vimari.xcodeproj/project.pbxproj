@@ -71,7 +71,7 @@
 		B1FD3B9823A588DE00677A52 /* defaultSettings.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = defaultSettings.json; sourceTree = "<group>"; };
 		E320D0652337FC9800F2C3A4 /* Credits.rtf */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; path = Credits.rtf; sourceTree = "<group>"; };
 		E320D06723397C5C00F2C3A4 /* CHANGELOG.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = CHANGELOG.md; sourceTree = "<group>"; };
-		E380F2462331806400640547 /* Vimari.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Vimari.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E380F2462331806400640547 /* Vimari+.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Vimari+.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		E380F2492331806400640547 /* Vimari.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Vimari.entitlements; sourceTree = "<group>"; };
 		E380F24B2331806400640547 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		E380F24E2331806400640547 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
@@ -133,7 +133,7 @@
 		E380F2472331806400640547 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				E380F2462331806400640547 /* Vimari.app */,
+				E380F2462331806400640547 /* Vimari+.app */,
 				E380F2592331806500640547 /* Vimari Extension.appex */,
 			);
 			name = Products;
@@ -231,7 +231,7 @@
 			);
 			name = Vimari;
 			productName = Vimari;
-			productReference = E380F2462331806400640547 /* Vimari.app */;
+			productReference = E380F2462331806400640547 /* Vimari+.app */;
 			productType = "com.apple.product-type.application";
 		};
 		E380F2582331806500640547 /* Vimari Extension */ = {
@@ -545,7 +545,7 @@
 				);
 				MARKETING_VERSION = 3.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.christianvalera.Vimari;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "Vimari+";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;
 			};
@@ -568,7 +568,7 @@
 				);
 				MARKETING_VERSION = 3.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.christianvalera.Vimari;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "Vimari+";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;
 			};
