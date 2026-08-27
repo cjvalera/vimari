@@ -10,30 +10,56 @@
    ```
 2. Install JavaScript dependencies with `npm ci`.
 3. Open `Vimari.xcodeproj` with Xcode 27 or later.
-4. [Set your signing team](https://help.apple.com/xcode/mac/current/#/dev23aab79b4) for both targets (Vimari and Vimari Extension).
-5. Run the project (<kbd>⌘</kbd>+<kbd>R</kbd>), then enable Vimari and grant website access in Safari's Extensions settings.
+4. [Set your signing team](https://help.apple.com/xcode/mac/current/#/dev23aab79b4) for both targets (the Vimari+ app product and its Vimari Extension target).
+5. Run the project (<kbd>⌘</kbd>+<kbd>R</kbd>), then enable Vimari+ and grant website access in Safari's Extensions settings.
 
-Use `npm test` for JavaScript tests. WebExtension resources can also be loaded
-temporarily from the `Vimari Extension` folder while iterating in Safari.
+Use `npm test` for JavaScript tests. Use the generated app for browser testing;
+the source `Vimari Extension` directory is arranged for Xcode and is not an
+unpacked extension bundle.
+
+Before release, test both Safari and Orion manually. Exercise normal pages and
+SPAs, editable fields and insert mode, find wrapping, link copying and queued
+background hints, counted commands, help and tab search, multiple windows,
+closed-tab restore, settings updates, and a browser-restricted page. Automated
+tests and unsigned builds do not verify extension signing, website permission
+grants, or real browser event/API behavior.
 
 ### Local build
 
 Run `make local-build` to create an ad-hoc signed development build at
-`build/local/Vimari.app`. This uses Xcode's **Sign to Run Locally** identity, so
-it does not require an Apple developer team. Run `make local-run` to build and
-launch the containing app, which registers the embedded extension with Safari.
+`build/local/Vimari+.app`. The target cleans its generated bundle first so a
+removed WebExtension resource cannot survive an incremental build. It uses
+Xcode's **Sign to Run Locally** identity, so it does not require an Apple
+developer team. Run `make local-run` to build and launch the containing app,
+which registers the embedded extension with Safari.
 
 Before enabling an ad-hoc signed build, open Safari's developer settings and
 turn on **Allow unsigned extensions**. Safari resets that setting whenever it
-quits. Then enable Vimari from Safari's Extensions settings.
+quits. Then enable Vimari+ from Safari's Extensions settings.
+
+For Orion, choose **Tools → Extensions → Install from Disk** and select
+`build/local/Vimari+.app`. Orion documents direct support for installing Safari
+web extensions from disk. Grant Vimari+ access to the sites used for the manual
+smoke test.
 
 ### Linting & Formatting
 
 The repository does not currently enforce an automatic formatter or linter.
 
+### Compatibility boundaries
+
+Vimari+ checks optional WebExtension APIs at runtime. Find is implemented from
+page text and closed-tab restore uses a ten-item URL cache because Safari does
+not expose the equivalent native APIs. Restore recreates the URL near its old
+position, but cannot restore the tab's full back/forward history. If native tab
+duplication is unavailable, Vimari+ recreates the current URL beside the tab.
+Tab movement,
+bookmark/history search, zoom commands, iframe coordination, and Shadow DOM
+link discovery remain outside the current milestone.
+
 ## Contributing
 
-If you'd like to contribute to the development of Vimari you can help us out through several means:
+If you'd like to contribute to the development of Vimari+ you can help us out through several means:
 
 1. Create bug reports for issues you encounter, or look trough existing bug reports and try to reproduce their problems.
 2. Try out the latest beta version (if there is one) and report issues back to us.

@@ -1,6 +1,16 @@
 Changelog
 -------------
 
+### Unreleased
+
+* Add sequence-aware commands with count prefixes and `gt`/`gT` aliases.
+* Add page find, URL and link copying, multi-link hints, URL-level navigation,
+  and an accessible shortcut overlay.
+* Add first/last/previous tab navigation, tab search, native tab creation and
+  duplication, and cached closed-tab restore.
+* Persist tab activation and a ten-item closed-tab cache using session storage
+  when available, with local-storage fallback.
+
 ### 3.0.0
 
 * Replace the legacy Safari App Extension with a Manifest V3 Safari Web Extension.
