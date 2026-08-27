@@ -1,419 +1,327 @@
-/*
- * Vimari injected script.
- *
- * This script is called before the requested page is loaded.  This allows us
- * to intercept events before they are passed to the requested pages code and
- * therefore we can stop certain pages (google) stealing the focus.
- */
-
-
-/*
- * Global vars
- *
- * topWindow        - true if top window, false if iframe
- * settings         - stores user settings
- * currentZoomLevel - required for vimium scripts to run correctly
- * linkHintCss      - required from vimium scripts
- * extensionActive  - is the extension currently enabled (should only be true when tab is active)
- * shiftKeyToggle   - is shift key currently toggled
- */
-
+/* Vimari's top-frame command runtime. */
 var topWindow = (window.top === window),
-	settings = {},
-	currentZoomLevel = 100,
-	linkHintCss = {},
-	extensionActive = true,
-	insertMode = false,
-	shiftKeyToggle = false,
-	hudDuration = 5000,
+    settings = {},
+    currentZoomLevel = 100,
+    linkHintCss = {},
+    extensionActive = true,
+    insertMode = false,
+    shiftKeyToggle = false,
+    hudDuration = 5000,
     sitePropagationHandler = null,
-    extensionCommunicator = WebExtensionCommunicator();
+    commandDispatcher = null,
+    extensionCommunicator = WebExtensionCommunicator(),
+    overlays = new VimariContentFeatures.OverlayManager(document, window),
+    findMode = new VimariContentFeatures.FindMode(document, window, overlays),
+    clipboardController = new VimariContentFeatures.ClipboardController(document, navigator, overlays),
+    tabPicker = new VimariContentFeatures.TabPicker(document, overlays);
 
-var actionMap = {
-	'hintToggle' : function() {
-		HUD.showForDuration('Open link in current tab', hudDuration);
-		activateLinkHintsMode(false, false); },
-
-	'newTabHintToggle' : function() {
-		HUD.showForDuration('Open link in new tab', hudDuration);
-		activateLinkHintsMode(true, false); },
-
-	'tabForward':
-        function() { extensionCommunicator.requestTabForward(); },
-
-	'tabBack':
-        function() { extensionCommunicator.requestTabBackward() },
-
-	'scrollDown':
-		function() { customScrollBy(0, settings.scrollSize); },
-
-	'scrollUp':
-		function() { customScrollBy(0, -settings.scrollSize); },
-
-	'scrollLeft':
-		function() { customScrollBy(-settings.scrollSize, 0); },
-
-	'scrollRight':
-		function() { customScrollBy(settings.scrollSize, 0); },
-
-	'goBack':
-		function() { window.history.back(); },
-
-	'goForward':
-		function() { window.history.forward(); },
-
-	'reload':
-		function() { window.location.reload(); },
-
-	'openTab':
-		function() { window.open(settings.openTabUrl); },
-
-	'closeTab':
-	    function() { extensionCommunicator.requestCloseTab(); },
-
-	'duplicateTab':
-		function() { window.open(window.location.href); },
-
-	'scrollDownHalfPage':
-		function() { customScrollBy(0, window.innerHeight / 2); },
-
-	'scrollUpHalfPage':
-		function() { customScrollBy(0, window.innerHeight / -2); },
-
-	'goToPageBottom':
-		function() { customScrollBy(0, document.body.scrollHeight); },
-
-	'goToPageTop':
-		function() { customScrollBy(0, -document.body.scrollHeight); },
-
-	'goToFirstInput':
-		function() { goToFirstInput(); }
+var commandDescriptions = {
+    hintToggle: "Open a link in the current tab",
+    newTabHintToggle: "Open a link in a background tab",
+    multiLinkHintToggle: "Open multiple links in background tabs",
+    copyLinkUrl: "Copy a link URL",
+    scrollUp: "Scroll up",
+    scrollDown: "Scroll down",
+    scrollLeft: "Scroll left",
+    scrollRight: "Scroll right",
+    scrollUpHalfPage: "Scroll up half a page",
+    scrollDownHalfPage: "Scroll down half a page",
+    goToPageTop: "Go to the top of the page",
+    goToPageBottom: "Go to the bottom of the page",
+    goToFirstInput: "Focus the first text input",
+    enterFindMode: "Find text on the page",
+    findNext: "Select the next find match",
+    findPrevious: "Select the previous find match",
+    copyCurrentUrl: "Copy the current URL",
+    goUpUrl: "Go up one URL level",
+    goRootUrl: "Go to the site origin",
+    goBack: "Go back in history",
+    goForward: "Go forward in history",
+    reload: "Reload the page",
+    tabForward: "Go to the next tab",
+    tabBack: "Go to the previous tab",
+    firstTab: "Go to the first tab",
+    lastTab: "Go to the last tab",
+    previousActiveTab: "Return to the previously active tab",
+    searchTabs: "Search open tabs",
+    closeTab: "Close the current tab",
+    restoreTab: "Restore the last closed tab",
+    openTab: "Open a new tab",
+    duplicateTab: "Duplicate the current tab",
+    showHelp: "Show this shortcut reference"
 };
 
-// Inspiration and general algorithm taken from sVim.
-function goToFirstInput() {
-  var inputs = document.querySelectorAll('input,textarea');
-
-  var bestInput = null;
-  var bestInViewInput = null;
-
-  inputs.forEach(function(input) {
-    // Skip if hidden or disabled
-    if ((input.offsetParent === null) ||
-        input.disabled ||
-        (input.getAttribute('type') === 'hidden') ||
-        (getComputedStyle(input).visibility === 'hidden') ||
-        (input.getAttribute('display') === 'none')) {
-      return;
-    }
-
-    // Skip things that are not actual inputs
-    if ((input.localName !== 'textarea') &&
-        (input.localName !== 'input') &&
-        (input.getAttribute('contenteditable') !== 'true')) {
-      return;
-    }
-
-    // Skip non-text inputs
-    if (/button|radio|file|image|checkbox|submit/i.test(input.getAttribute('type'))) {
-      return;
-    }
-
-    var inputRect = input.getClientRects()[0];
-    var isInView = (inputRect.top >= -inputRect.height) &&
-                   (inputRect.top <= window.innerHeight) &&
-                   (inputRect.left >= -inputRect.width) &&
-                   (inputRect.left <= window.innerWidth);
-
-    if (bestInput === null) {
-      bestInput = input;
-    }
-
-    if (isInView && (bestInViewInput === null)) {
-      bestInViewInput = input;
-    }
-  });
-
-  var inputToFocus = bestInViewInput || bestInput;
-  if (inputToFocus !== null) {
-    inputToFocus.focus();
-  }
+function reportRequest(request) {
+    return Promise.resolve(request).then(function (response) {
+        if (response && !response.ok) overlays.showStatus(response.error || "The browser could not perform that action.", "error");
+        return response;
+    });
 }
 
-// Meant to be overridden, but still has to be copy/pasted from the original...
-Mousetrap.prototype.stopCallback = function(e, element, combo) {
-	// Escape key is special, no need to stop. Vimari-specific.
-	if (combo === 'esc' || combo === 'ctrl+[') { return false; }
+function scrollByCount(x, y, meta) {
+    customScrollBy(x * meta.count, y * meta.count);
+}
 
-  // Preserve the behavior of allowing ex. ctrl-j in an input
-  if (settings.modifier) { return false; }
+function navigateUpUrl(toOrigin) {
+    window.location.assign(VimariContentFeatures.parentUrl(window.location.href, toOrigin));
+}
 
-	// if the element has the class "mousetrap" then no need to stop
-	if ((' ' + element.className + ' ').indexOf(' mousetrap ') > -1) {
-		return false;
-	}
+function effectiveBindingsFor(actionName) {
+    var configured = settings.bindings && settings.bindings[actionName];
+    var bindings = Array.isArray(configured) ? configured.slice() : [configured];
+    var aliases = actionName === "tabForward" ? ["g t"] : actionName === "tabBack" ? ["g shift+t"] : [];
+    aliases.forEach(function (alias) {
+        var normalizedAlias = VimariCommandDispatcher.normalizeBinding(alias).join(" ");
+        if (!bindings.some(function (binding) {
+            return VimariCommandDispatcher.normalizeBinding(binding).join(" ") === normalizedAlias;
+        })) bindings.push(alias);
+    });
+    return bindings.filter(function (binding) { return typeof binding === "string" && binding.trim(); });
+}
 
-    var tagName = element.tagName;
-    var contentIsEditable = (element.contentEditable && element.contentEditable === 'true');
+function showHelp() {
+    var commands = Object.keys(commandDescriptions).map(function (actionName) {
+        return {
+            bindings: effectiveBindingsFor(actionName),
+            description: commandDescriptions[actionName]
+        };
+    }).filter(function (command) { return command.bindings.length > 0; });
+    overlays.showHelp(commands);
+}
 
-    // stop for input, select, and textarea
-    return tagName === 'INPUT' || tagName === 'SELECT' || tagName === 'TEXTAREA' || contentIsEditable;
+function searchTabs() {
+    reportRequest(extensionCommunicator.requestTabs()).then(function (response) {
+        if (!response || !response.ok) return;
+        tabPicker.open(response.tabs || [], function (tab) {
+            reportRequest(extensionCommunicator.requestActivateTab(tab.id));
+        });
+    });
+}
+
+var actionMap = {
+    hintToggle: function () { activateLinkHintsMode(false, false, false); },
+    newTabHintToggle: function () { activateLinkHintsMode(true, false, false); },
+    multiLinkHintToggle: function () { activateLinkHintsMode(true, true, false); },
+    copyLinkUrl: function () { activateLinkHintsModeToCopyUrl(); },
+    tabForward: function (meta) {
+        if (meta.binding.endsWith("g t") && meta.countProvided) reportRequest(extensionCommunicator.requestTabIndex(meta.count - 1));
+        else reportRequest(extensionCommunicator.requestTabForward(meta.count));
+    },
+    tabBack: function (meta) { reportRequest(extensionCommunicator.requestTabBackward(meta.count)); },
+    firstTab: function () { reportRequest(extensionCommunicator.requestFirstTab()); },
+    lastTab: function () { reportRequest(extensionCommunicator.requestLastTab()); },
+    previousActiveTab: function () { reportRequest(extensionCommunicator.requestPreviousActiveTab()); },
+    searchTabs: searchTabs,
+    restoreTab: function () { reportRequest(extensionCommunicator.requestRestoreTab()); },
+    scrollDown: function (meta) { scrollByCount(0, settings.scrollSize, meta); },
+    scrollUp: function (meta) { scrollByCount(0, -settings.scrollSize, meta); },
+    scrollLeft: function (meta) { scrollByCount(-settings.scrollSize, 0, meta); },
+    scrollRight: function (meta) { scrollByCount(settings.scrollSize, 0, meta); },
+    goBack: function (meta) { window.history.go(-meta.count); },
+    goForward: function (meta) { window.history.go(meta.count); },
+    reload: function () { window.location.reload(); },
+    openTab: function () { reportRequest(extensionCommunicator.requestCreateTab(settings.openTabUrl)); },
+    closeTab: function () { reportRequest(extensionCommunicator.requestCloseTab()); },
+    duplicateTab: function () { reportRequest(extensionCommunicator.requestDuplicateTab()); },
+    scrollDownHalfPage: function (meta) { scrollByCount(0, window.innerHeight / 2, meta); },
+    scrollUpHalfPage: function (meta) { scrollByCount(0, window.innerHeight / -2, meta); },
+    goToPageBottom: function () { customScrollBy(0, document.body.scrollHeight); },
+    goToPageTop: function () { customScrollBy(0, -document.body.scrollHeight); },
+    goToFirstInput: goToFirstInput,
+    enterFindMode: function () { findMode.open(); },
+    findNext: function () { findMode.move(1); },
+    findPrevious: function () { findMode.move(-1); },
+    copyCurrentUrl: function () { clipboardController.copy(window.location.href, "URL"); },
+    goUpUrl: function () { navigateUpUrl(false); },
+    goRootUrl: function () { navigateUpUrl(true); },
+    showHelp: showHelp
 };
 
-// Set up key codes to event handlers
-function bindKeyCodesToActions(settings) {
-	// Only add if topWindow... not iframe
-    Mousetrap.reset();
-	if (topWindow) {
-		Mousetrap.bind('esc', enterNormalMode);
-		Mousetrap.bind('ctrl+[', enterNormalMode);
-		Mousetrap.bind('i', enterInsertMode);
-		for (var actionName in actionMap) {
-			if (actionMap.hasOwnProperty(actionName)) {
-				var keyCode = getKeyCode(actionName);
-				Mousetrap.bind(keyCode, executeAction(actionName), 'keydown');
-			}
-		}
-	}
+function goToFirstInput() {
+    var inputs = document.querySelectorAll("input,textarea,[contenteditable=true]");
+    var bestInput = null;
+    var bestInViewInput = null;
+    inputs.forEach(function (input) {
+        if (input.offsetParent === null || input.disabled || input.getAttribute("type") === "hidden" ||
+            getComputedStyle(input).visibility === "hidden" || getComputedStyle(input).display === "none" ||
+            /button|radio|file|image|checkbox|submit/i.test(input.getAttribute("type") || "")) return;
+        var rect = input.getClientRects()[0];
+        if (!rect) return;
+        var inView = rect.top >= -rect.height && rect.top <= window.innerHeight &&
+            rect.left >= -rect.width && rect.left <= window.innerWidth;
+        if (!bestInput) bestInput = input;
+        if (inView && !bestInViewInput) bestInViewInput = input;
+    });
+    var inputToFocus = bestInViewInput || bestInput;
+    if (inputToFocus) inputToFocus.focus();
+}
+
+function bindKeyCodesToActions(nextSettings) {
+    if (commandDispatcher) commandDispatcher.reset();
+    commandDispatcher = new VimariCommandDispatcher.CommandDispatcher({
+        timeout: 1000,
+        onPending: function (pending) {
+            if (pending) overlays.showStatus(pending, "pending", 1100);
+            else overlays.clearStatus();
+        }
+    });
+    if (!topWindow) return;
+    Object.keys(actionMap).forEach(function (actionName) {
+        commandDispatcher.register(actionName, effectiveBindingsFor(actionName), executeAction(actionName), nextSettings.modifier);
+    });
+    commandDispatcher.register("enterInsertMode", "i", enterInsertMode);
 }
 
 function enterNormalMode() {
-	// Clear input focus
-	document.activeElement.blur();
-
-	// Clear link hints (if any)
-	deactivateLinkHintsMode();
-
-
-    if (insertMode === false) {
-        return // We are already in normal mode.
-    }
-
-	// Re-enable if in insert mode
-	insertMode = false;
-    HUD.showForDuration('Normal Mode', hudDuration);
-
-	Mousetrap.bind('i', enterInsertMode);
+    if (document.activeElement && typeof document.activeElement.blur === "function") document.activeElement.blur();
+    deactivateLinkHintsMode();
+    findMode.close();
+    tabPicker.close();
+    overlays.closeModal();
+    if (commandDispatcher) commandDispatcher.reset();
+    var wasInsertMode = insertMode;
+    insertMode = false;
+    if (wasInsertMode) overlays.showStatus("Normal mode");
 }
 
-// Calling it 'insert mode', but it's really just a user-triggered
-// off switch for the actions.
 function enterInsertMode() {
-    if (insertMode === true) {
-        return // We are already in insert mode.
-    }
+    if (insertMode) return;
     insertMode = true;
-    HUD.showForDuration('Insert Mode', hudDuration);
-	Mousetrap.unbind('i');
+    if (commandDispatcher) commandDispatcher.reset();
+    overlays.showStatus("Insert mode");
 }
 
 function executeAction(actionName) {
-	return function() {
-		// don't do anything if we're not supposed to
-		if (linkHintsModeActivated || !extensionActive || insertMode)
-			return;
+    return function (meta) {
+        if (linkHintsModeActivated || !extensionActive || insertMode) return;
+        actionMap[actionName](meta || { count: 1, countProvided: false, binding: "" });
+    };
+}
 
-		//Call the action function
-		actionMap[actionName]();
+function isEditable(target) {
+    if (!target || !target.tagName) return false;
+    if (target.getAttribute("contentEditable") === "true" || target.isContentEditable) return true;
+    return ["input", "textarea", "select", "button"].indexOf(target.tagName.toLowerCase()) >= 0;
+}
 
-		// Tell mousetrap to stop propagation
-		return false;
-	}
+function eventTargetsEditable(event) {
+    var path = typeof event.composedPath === "function" ? event.composedPath() : [event.target];
+    return path.some(isEditable);
+}
+
+function onDocumentKeyDown(event) {
+    var token = VimariCommandDispatcher.eventToToken(event);
+    if (token === "esc" || token === "ctrl+[") {
+        enterNormalMode();
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+    }
+    if (!extensionActive || insertMode || linkHintsModeActivated || findMode.isOpen() || overlays.modalHost) return;
+    if (eventTargetsEditable(event) && !settings.modifier) return;
+    var handled = commandDispatcher && commandDispatcher.handleEvent(event);
+    if (handled) {
+        event.preventDefault();
+        event.stopPropagation();
+    } else if (settings.transparentBindings === false && !eventTargetsEditable(event)) {
+        event.stopPropagation();
+    }
 }
 
 function unbindKeyCodes() {
-	Mousetrap.reset();
-    if (sitePropagationHandler !== null) {
-        document.removeEventListener("keydown", sitePropagationHandler, true);
-        sitePropagationHandler = null;
-    }
+    if (commandDispatcher) commandDispatcher.reset();
+    commandDispatcher = null;
+    if (sitePropagationHandler) document.removeEventListener("keydown", sitePropagationHandler, true);
+    sitePropagationHandler = null;
 }
 
-// Returns all keys bound in the settings.
 function boundKeys() {
-    const splitBinding = s => s.split(/\+| /i)
-    var bindings = Object.values(settings.bindings)
-        // Split multi-key bindings.
-        .flatMap(s => {
-            if (typeof s === "string" || s instanceof String) {
-                return splitBinding(s)
-            } else if (Array.isArray(s)) {
-                return s.flatMap(splitBinding)
-            }
-        })
-
-    // Manually add the modifier, i, esc, and ctr+[.
-    bindings.push(settings.modifier)
-    bindings.push("i")
-    bindings.push("Escape")
-    bindings.push("Control")
-    bindings.push("[")
-
-    // Use a set to remove duplicates.
-    return new Set(bindings)
+    var keys = [];
+    Object.keys(commandDescriptions).forEach(function (action) {
+        effectiveBindingsFor(action).forEach(function (binding) {
+            keys = keys.concat(VimariCommandDispatcher.normalizeBinding(binding));
+        });
+    });
+    return new Set(keys);
 }
 
-// Stops propagation of keyboard events in normal mode. Adding this
-// callback to the document using the useCapture flag allows us to
-// prevent custom key behaviour implemented by the underlying website.
-function stopSitePropagation(e) {
-    if (insertMode) {
-        // Never stop propagation in insert mode.
-        return
-    }
-
-    if (settings.transparentBindings === true) {
-        if (boundKeys().has(e.key) && !isActiveElementEditable()) {
-            // If we are in normal mode with transparentBindings enabled we
-            // should only stop propagation in an editable element or if the
-            // key is bound to a Vimari action.
-            e.stopPropagation()
-        }
-    } else if (!isActiveElementEditable()) {
-        e.stopPropagation()
-    }
+function stopSitePropagation(event) {
+    onDocumentKeyDown(event);
 }
 
-// Check whether the current active element is editable.
 function isActiveElementEditable() {
-    const el = document.activeElement;
-    return (el != null && isEditable(el))
+    return isEditable(document.activeElement);
 }
- 
 
-// Adds an optional modifier to the configured key code for the action
 function getKeyCode(actionName) {
-    if (settings === undefined) {
-        return ''
-    }
-
-	var keyCode = settings["bindings"][actionName];
-    const addModifier = s => {
-        if (settings.modifier && settings.modifier.length > 0) {
-            return `${settings.modifier}+${s}`
-        } else {
-            return s
-        }
-    }
-
-    if (Array.isArray(keyCode)) {
-        return keyCode.map(addModifier)
-    } else {
-        return addModifier(keyCode)
-    }
+    if (!settings || !settings.bindings) return "";
+    var binding = settings.bindings[actionName];
+    function addModifier(value) { return settings.modifier ? `${settings.modifier}+${value}` : value; }
+    return Array.isArray(binding) ? binding.map(addModifier) : addModifier(binding);
 }
 
+function addCssToPage() {}
+function isEmbed(element) { return ["EMBED", "OBJECT"].indexOf(element.tagName) >= 0; }
 
-/*
- * Adds the given CSS to the page.
- * This function is required by vimium but depracated for vimari as the
- * css is pre loaded into the page.
- */
-function addCssToPage(css) {
-	return;
+function setSettings(message) {
+    settings = message;
+    activateExtension(settings);
 }
 
-
-/*
- * Input or text elements are considered focusable and able to receive their own keyboard events,
- * and will enter enter mode if focused. Also note that the "contentEditable" attribute can be set on
- * any element which makes it a rich text editor, like the notes on jjot.com.
- * Note: we used to discriminate for text-only inputs, but this is not accurate since all input fields
- * can be controlled via the keyboard, particularly SELECT combo boxes.
- */
-function isEditable(target) {
-	if (target.getAttribute("contentEditable") === "true")
-		return true;
-	var focusableInputs = ["input", "textarea", "select", "button"];
-	return focusableInputs.indexOf(target.tagName.toLowerCase()) >= 0;
-}
-
-
-/*
- * Embedded elements like Flash and quicktime players can obtain focus but cannot be programmatically
- * unfocused.
- */
-function isEmbed(element) { return ["EMBED", "OBJECT"].indexOf(element.tagName) > 0; }
-
-
-function setSettings(msg) {
-	settings = msg;
-	activateExtension(settings);
-}
-
-function activateExtension(settings) {
+function activateExtension(nextSettings) {
     deactivateExtension();
-
-    if ((typeof settings != "undefined") &&
-        isExcludedUrl(settings.excludedUrls, document.URL)) {
-        return;
-    }
-
-    // Stop keydown propagation
+    if (nextSettings && isExcludedUrl(nextSettings.excludedUrls, document.URL)) return;
     extensionActive = true;
     sitePropagationHandler = stopSitePropagation;
     document.addEventListener("keydown", sitePropagationHandler, true);
-    bindKeyCodesToActions(settings);
+    bindKeyCodesToActions(nextSettings);
 }
 
 function deactivateExtension() {
     extensionActive = false;
     insertMode = false;
     deactivateLinkHintsMode();
+    findMode.close();
+    tabPicker.close();
+    overlays.closeModal();
     unbindKeyCodes();
 }
 
 function isExcludedUrl(storedExcludedUrls, currentUrl) {
-	if (!storedExcludedUrls.length) {
-		return false;
-	}
-
-    var excludedUrls, regexp, url, formattedUrl, _i, _len;
-    excludedUrls = storedExcludedUrls.split(",");
-    for (_i = 0, _len = excludedUrls.length; _i < _len; _i++) {
-        url = excludedUrls[_i];
-        formattedUrl = stripProtocolAndWww(url);
-        formattedUrl = formattedUrl.toLowerCase().trim();
-        regexp = new RegExp('((.*)?(' + formattedUrl + ')+(.*))');
-        if (currentUrl.toLowerCase().match(regexp)) {
-            return true;
-        }
-    }
-    return false;
+    if (!storedExcludedUrls.length) return false;
+    return storedExcludedUrls.split(",").some(function (excludedUrl) {
+        var formattedUrl = stripProtocolAndWww(excludedUrl).toLowerCase().trim();
+        return currentUrl.toLowerCase().includes(formattedUrl);
+    });
 }
 
-// These formations removes the protocol and www so that
-// the regexp can catch less AND more specific excluded
-// domains than the current URL.
 function stripProtocolAndWww(url) {
-  url = url.replace('http://', '');
-  url = url.replace('https://', '');
-  if (url.startsWith('www.')) {
-      url = url.slice(4);
-  }
-
-  return url;
+    url = url.replace("http://", "").replace("https://", "");
+    return url.startsWith("www.") ? url.slice(4) : url;
 }
 
-// Add event listener
-function inIframe () {
-    try {
-        return window.self !== window.top;
-    }
-    catch (e) {
-        return true;
-    }
+function inIframe() {
+    try { return window.self !== window.top; }
+    catch (_error) { return true; }
 }
 
-if(!inIframe()){
-    VimariSettings.load()
-        .then(setSettings)
-        .catch(function (error) {
-            console.error("Unable to load Vimari settings:", error);
-        });
+if (!inIframe()) {
+    VimariSettings.load().then(setSettings).catch(function (error) {
+        console.error("Unable to load Vimari settings:", error);
+    });
     VimariSettings.subscribe(setSettings);
 }
-                                 
-// Export to make it testable
+
 window.isExcludedUrl = isExcludedUrl;
 window.stripProtocolAndWww = stripProtocolAndWww;
+window.VimariInjected = {
+    actionMap: actionMap,
+    bindKeyCodesToActions: bindKeyCodesToActions,
+    enterInsertMode: enterInsertMode,
+    enterNormalMode: enterNormalMode,
+    eventTargetsEditable: eventTargetsEditable,
+    isActiveElementEditable: isActiveElementEditable,
+    navigateUpUrl: navigateUpUrl,
+    onDocumentKeyDown: onDocumentKeyDown,
+    setSettings: setSettings
+};

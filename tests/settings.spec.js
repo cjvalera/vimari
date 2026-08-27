@@ -16,6 +16,8 @@ describe("Vimari settings", () => {
         expect(merged.scrollSize).toBe(300);
         expect(merged.bindings.scrollDown).toBe("n");
         expect(merged.bindings.scrollUp).toBe(defaults.bindings.scrollUp);
+        expect(merged.bindings.enterFindMode).toBe("/");
+        expect(merged.bindings.restoreTab).toBe("shift+x");
     });
 
     it("accepts strings and arrays for bindings", () => {

@@ -118,3 +118,29 @@ describe('stripProtocolAndWww', () => {
         expect(stripProtocolAndWww(url)).to.equal('specific-domain.com');
     });
 });
+
+describe('command mode integration', () => {
+    beforeEach(() => {
+        const nextSettings = JSON.parse(JSON.stringify(__vimariMocks.defaultSettings));
+        window.VimariInjected.setSettings(nextSettings);
+    });
+
+    it('suppresses commands in editable elements', () => {
+        const action = jest.spyOn(window.VimariInjected.actionMap, 'scrollDown').mockImplementation(() => {});
+        const input = document.createElement('input');
+        document.body.appendChild(input);
+        input.focus();
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'j', bubbles: true, composed: true }));
+        expect(action.mock.calls.length).to.equal(0);
+    });
+
+    it('disables commands in insert mode until Escape returns to normal mode', () => {
+        const action = jest.spyOn(window.VimariInjected.actionMap, 'scrollDown').mockImplementation(() => {});
+        document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'i', bubbles: true }));
+        document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'j', bubbles: true }));
+        expect(action.mock.calls.length).to.equal(0);
+        document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'j', bubbles: true }));
+        expect(action.mock.calls.length).to.equal(1);
+    });
+});

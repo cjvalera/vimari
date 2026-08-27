@@ -16,6 +16,8 @@
 		A10000052331806500640547 /* options.css in Resources */ = {isa = PBXBuildFile; fileRef = A10000152331806500640547 /* options.css */; };
 		A10000062331806500640547 /* options.js in Resources */ = {isa = PBXBuildFile; fileRef = A10000162331806500640547 /* options.js */; };
 		A10000072331806500640547 /* images in Resources */ = {isa = PBXBuildFile; fileRef = A10000172331806500640547 /* images */; };
+		A10000082331806500640547 /* command-dispatcher.js in Resources */ = {isa = PBXBuildFile; fileRef = A10000182331806500640547 /* command-dispatcher.js */; };
+		A10000092331806500640547 /* content-features.js in Resources */ = {isa = PBXBuildFile; fileRef = A10000192331806500640547 /* content-features.js */; };
 		B1FD3B9923A588DE00677A52 /* defaultSettings.json in Resources */ = {isa = PBXBuildFile; fileRef = B1FD3B9823A588DE00677A52 /* defaultSettings.json */; };
 		E320D0662337FC9800F2C3A4 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = E320D0652337FC9800F2C3A4 /* Credits.rtf */; };
 		E320D06823397C5C00F2C3A4 /* CHANGELOG.md in Resources */ = {isa = PBXBuildFile; fileRef = E320D06723397C5C00F2C3A4 /* CHANGELOG.md */; };
@@ -29,7 +31,6 @@
 		E380F283233183EF00640547 /* link-hints.js in Resources */ = {isa = PBXBuildFile; fileRef = E380F278233183EE00640547 /* link-hints.js */; };
 		E380F285233183EF00640547 /* injected.js in Resources */ = {isa = PBXBuildFile; fileRef = E380F27A233183EE00640547 /* injected.js */; };
 		E380F287233183EF00640547 /* keyboard-utils.js in Resources */ = {isa = PBXBuildFile; fileRef = E380F27C233183EE00640547 /* keyboard-utils.js */; };
-		E380F288233183EF00640547 /* mousetrap.js in Resources */ = {isa = PBXBuildFile; fileRef = E380F27E233183EE00640547 /* mousetrap.js */; };
 		E380F289233183EF00640547 /* vimium-scripts.js in Resources */ = {isa = PBXBuildFile; fileRef = E380F27F233183EE00640547 /* vimium-scripts.js */; };
 		E380F28B233183EF00640547 /* injected.css in Resources */ = {isa = PBXBuildFile; fileRef = E380F282233183EE00640547 /* injected.css */; };
 /* End PBXBuildFile section */
@@ -68,6 +69,8 @@
 		A10000152331806500640547 /* options.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = options.css; sourceTree = "<group>"; };
 		A10000162331806500640547 /* options.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = options.js; sourceTree = "<group>"; };
 		A10000172331806500640547 /* images */ = {isa = PBXFileReference; lastKnownFileType = folder; path = images; sourceTree = "<group>"; };
+		A10000182331806500640547 /* command-dispatcher.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "command-dispatcher.js"; sourceTree = "<group>"; };
+		A10000192331806500640547 /* content-features.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "content-features.js"; sourceTree = "<group>"; };
 		B1FD3B9823A588DE00677A52 /* defaultSettings.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = defaultSettings.json; sourceTree = "<group>"; };
 		E320D0652337FC9800F2C3A4 /* Credits.rtf */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; path = Credits.rtf; sourceTree = "<group>"; };
 		E320D06723397C5C00F2C3A4 /* CHANGELOG.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = CHANGELOG.md; sourceTree = "<group>"; };
@@ -184,6 +187,8 @@
 			children = (
 				A10000122331806500640547 /* settings.js */,
 				A10000112331806500640547 /* background.js */,
+				A10000182331806500640547 /* command-dispatcher.js */,
+				A10000192331806500640547 /* content-features.js */,
 				E380F278233183EE00640547 /* link-hints.js */,
 				E380F27A233183EE00640547 /* injected.js */,
 				E380F27B233183EE00640547 /* mocks.js */,
@@ -311,6 +316,8 @@
 				A10000072331806500640547 /* images in Resources */,
 				A10000012331806500640547 /* background.js in Resources */,
 				A10000022331806500640547 /* settings.js in Resources */,
+				A10000082331806500640547 /* command-dispatcher.js in Resources */,
+				A10000092331806500640547 /* content-features.js in Resources */,
 				B1FD3B9923A588DE00677A52 /* defaultSettings.json in Resources */,
 				659033F124E2B77400432D0E /* svim-scripts.js in Resources */,
 				65E444F324CC3A1B008EA1DC /* WebExtensionCommunicator.js in Resources */,
@@ -319,7 +326,6 @@
 				E380F287233183EF00640547 /* keyboard-utils.js in Resources */,
 				E380F289233183EF00640547 /* vimium-scripts.js in Resources */,
 				E380F283233183EF00640547 /* link-hints.js in Resources */,
-				E380F288233183EF00640547 /* mousetrap.js in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

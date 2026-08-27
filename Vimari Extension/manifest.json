@@ -20,10 +20,11 @@
         "svim-scripts.js",
         "settings.js",
         "WebExtensionCommunicator.js",
+        "command-dispatcher.js",
+        "content-features.js",
         "keyboard-utils.js",
         "vimium-scripts.js",
         "link-hints.js",
-        "mousetrap.js",
         "injected.js"
       ],
       "css": ["injected.css"],

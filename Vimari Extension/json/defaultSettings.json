@@ -11,6 +11,8 @@
   "bindings": {
       "hintToggle": "f",
       "newTabHintToggle": "shift+f",
+      "multiLinkHintToggle": "alt+f",
+      "copyLinkUrl": "y f",
       "scrollUp": "k",
       "scrollDown": "j",
       "scrollLeft": "h",
@@ -20,13 +22,25 @@
       "goToPageTop": "g g",
       "goToPageBottom": "shift+g",
       "goToFirstInput": "g i",
+      "enterFindMode": "/",
+      "findNext": "n",
+      "findPrevious": "shift+n",
+      "copyCurrentUrl": "y y",
+      "goUpUrl": "g u",
+      "goRootUrl": "g shift+u",
       "goBack": "shift+h",
       "goForward": "shift+l",
       "reload": "r",
-      "tabForward": "w",
-      "tabBack": "q",
+      "tabForward": ["w", "g t"],
+      "tabBack": ["q", "g shift+t"],
+      "firstTab": "g 0",
+      "lastTab": "g $",
+      "previousActiveTab": "^",
+      "searchTabs": "shift+t",
       "closeTab": "x",
+      "restoreTab": "shift+x",
       "openTab": "t",
-      "duplicateTab": "y t"
+      "duplicateTab": "y t",
+      "showHelp": "?"
   }
 }
