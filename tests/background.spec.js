@@ -7,8 +7,8 @@ const {
     preferredStorageArea,
     recordActivation,
     requireSenderTab
-} = require("../Vimari Extension/js/background.js");
-const background = require("../Vimari Extension/js/background.js");
+} = require("../Vimkit Extension/js/background.js");
+const background = require("../Vimkit Extension/js/background.js");
 
 describe("WebExtension background actions", () => {
     const sender = { tab: { id: 2, windowId: 8 } };
@@ -17,7 +17,7 @@ describe("WebExtension background actions", () => {
         jest.clearAllMocks();
         background.state.activationHistory = {};
         background.state.closedTabs = [];
-        Object.keys(__vimariMocks.storedSession).forEach(key => delete __vimariMocks.storedSession[key]);
+        Object.keys(__vimkitMocks.storedSession).forEach(key => delete __vimkitMocks.storedSession[key]);
     });
 
     it("moves to the next tab and wraps", async () => {
@@ -157,7 +157,7 @@ describe("WebExtension background actions", () => {
     });
 
     it("hydrates persisted state after a service-worker restart and prefers session storage", async () => {
-        __vimariMocks.storedSession[STATE_KEY] = {
+        __vimkitMocks.storedSession[STATE_KEY] = {
             activationHistory: { 8: [7, 2] },
             closedTabs: [{ url: "https://persisted.test", windowId: 8, index: 1 }]
         };

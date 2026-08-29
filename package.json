@@ -1,8 +1,8 @@
 {
-  "name": "vimari",
-  "author": "Guy Halford-Thompson",
+  "name": "vimkit",
+  "author": "Christian Valera",
   "license": "MIT",
-  "homepage": "https://github.com/cjvalera/vimari",
+  "homepage": "https://github.com/cjvalera/vimkit",
   "scripts": {
     "test": "jest --runInBand",
     "test:watch": "jest --watch"

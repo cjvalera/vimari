@@ -3,7 +3,7 @@ const {
     applyGlobalModifier,
     eventToToken,
     normalizeBinding
-} = require("../Vimari Extension/js/command-dispatcher.js");
+} = require("../Vimkit Extension/js/command-dispatcher.js");
 
 describe("CommandDispatcher", () => {
     beforeEach(() => jest.useFakeTimers());

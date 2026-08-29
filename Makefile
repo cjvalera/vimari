@@ -2,12 +2,12 @@
 
 NPM=$(shell which npm)
 XCODEBUILD?=xcrun xcodebuild
-XCODE_PROJECT?=Vimari.xcodeproj
-XCODE_SCHEME?=Vimari
+XCODE_PROJECT?=Vimkit.xcodeproj
+XCODE_SCHEME?=Vimkit
 LOCAL_CONFIGURATION?=Debug
 LOCAL_BUILD_DIR?=$(CURDIR)/build/local
 LOCAL_DERIVED_DATA_DIR?=$(CURDIR)/build/DerivedData
-LOCAL_APP=$(LOCAL_BUILD_DIR)/Vimari+.app
+LOCAL_APP=$(LOCAL_BUILD_DIR)/Vimkit.app
 
 all: deps
 

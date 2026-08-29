@@ -1,4 +1,4 @@
-const WebExtensionCommunicator = require("../Vimari Extension/js/WebExtensionCommunicator.js");
+const WebExtensionCommunicator = require("../Vimkit Extension/js/WebExtensionCommunicator.js");
 
 describe("WebExtension communicator", () => {
     beforeEach(() => {

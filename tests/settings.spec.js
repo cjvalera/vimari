@@ -1,14 +1,14 @@
-const VimariSettings = require("../Vimari Extension/js/settings.js");
-const defaults = require("../Vimari Extension/json/defaultSettings.json");
+const VimkitSettings = require("../Vimkit Extension/js/settings.js");
+const defaults = require("../Vimkit Extension/json/defaultSettings.json");
 
-describe("Vimari settings", () => {
+describe("Vimkit settings", () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        __vimariMocks.storedSettings.settings = JSON.parse(JSON.stringify(defaults));
+        __vimkitMocks.storedSettings.settings = JSON.parse(JSON.stringify(defaults));
     });
 
     it("merges partial settings with defaults and nested bindings", () => {
-        const merged = VimariSettings.merge(defaults, {
+        const merged = VimkitSettings.merge(defaults, {
             scrollSize: 300,
             bindings: { scrollDown: "n" }
         });
@@ -21,7 +21,7 @@ describe("Vimari settings", () => {
     });
 
     it("accepts strings and arrays for bindings", () => {
-        const result = VimariSettings.validate({
+        const result = VimkitSettings.validate({
             bindings: {
                 scrollDown: ["j", "ctrl+j"]
             }
@@ -32,7 +32,7 @@ describe("Vimari settings", () => {
     });
 
     it("rejects invalid field types and empty bindings", () => {
-        const result = VimariSettings.validate({
+        const result = VimkitSettings.validate({
             smoothScroll: "yes",
             bindings: { scrollDown: [] }
         }, defaults);
@@ -43,18 +43,18 @@ describe("Vimari settings", () => {
     });
 
     it("rejects a non-object bindings value", () => {
-        const result = VimariSettings.validate({ bindings: [] }, defaults);
+        const result = VimkitSettings.validate({ bindings: [] }, defaults);
 
         expect(result.valid).toBe(false);
         expect(result.errors).toContain("bindings must be a JSON object.");
     });
 
     it("saves validated settings and resets defaults", async () => {
-        const saved = await VimariSettings.save({ scrollSize: 220 });
+        const saved = await VimkitSettings.save({ scrollSize: 220 });
         expect(saved.scrollSize).toBe(220);
         expect(browser.storage.local.set).toHaveBeenCalledWith({ settings: saved });
 
-        const reset = await VimariSettings.reset();
+        const reset = await VimkitSettings.reset();
         expect(reset).toEqual(defaults);
         expect(browser.storage.local.set).toHaveBeenLastCalledWith({ settings: defaults });
     });

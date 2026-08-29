@@ -1,7 +1,7 @@
 # Legacy installation notes for Safari version 12 and 13
 
-> These instructions apply only to Vimari 2's retired Safari App Extension.
-> Vimari 3 uses a Manifest V3 Safari Web Extension and requires Safari 26.2 or
+> These instructions apply only to Vimkit 2's retired Safari App Extension.
+> Vimkit 3 uses a Manifest V3 Safari Web Extension and requires Safari 26.2 or
 > later. See the repository README for current installation instructions.
 
 A new version of macOS is being released, macOS Mojave, and it's expected to
@@ -10,29 +10,29 @@ comes Safari 12, and a [completely new way of dealing with browser
 extensions](https://developer.apple.com/documentation/safariservices/safari_app_extensions).
  [We have had some issues](./crowdfunding.md) related to releasing new version
 of this extension, but they are now fixed and it's possible to install a version
-of vimari for Safari 12.
+of vimkit for Safari 12.
 
 ## How to install
 **Note: We are currently working on improving this installation flow, as well
-as the extension itself. Because vimari now has to be released as a _Safari
+as the extension itself. Because vimkit now has to be released as a _Safari
 App Extension_ instead of a _Safari Extension_ it requires some fundamental
 changes to the code. We can't guarantee that all the features work in
 this version. It's a learning process for us so bare with us.**
 
 1. Clone this repo
     ```sh
-    $ git clone git@github.com:guyht/vimari.git
+    $ git clone git@github.com:guyht/vimkit.git
     ```
-2. Open the Swift project located at `/Vimari.xcodeproj` in Xcode
-3. Configure the Signing settings for both the `vimari` and `extension` targets
-   to use your information rather than the Vimari team's (see [this SO answer](https://stackoverflow.com/questions/39754341/none-of-your-accounts-are-a-member-code-signing-errors-after-upgrading-to-xcode)
+2. Open the Swift project located at `/Vimkit.xcodeproj` in Xcode
+3. Configure the Signing settings for both the `vimkit` and `extension` targets
+   to use your information rather than the Vimkit team's (see [this SO answer](https://stackoverflow.com/questions/39754341/none-of-your-accounts-are-a-member-code-signing-errors-after-upgrading-to-xcode)
    for more information).
 4. If you want different settings than the default ones, make your changes in
    `settings.js`. You can always come back later to change the settings again.
 5. Build and run the project (`⌘ + r`)
 6. An empty GUI box will show up - ignore it (we'll fix it later). Go to
    Safari and open up settings (`⌘ + ,`). Go to _Extensions_ and you should
-   see **vimari** in the list of extensions. Enable it.
+   see **vimkit** in the list of extensions. Enable it.
 7. You may now press stop in Xcode and close Xcode. The extension will be
    available even if you restart Safari.
 

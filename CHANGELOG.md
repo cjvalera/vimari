@@ -1,8 +1,18 @@
 Changelog
 -------------
 
-### Unreleased
+Vimkit is an independent fork of [Vimari](https://github.com/televator-apps/vimari).
+Entries for 2.1.1 and earlier describe releases of Vimari by Televator Limited
+and link to that project's issue tracker; they are kept here for history.
 
+### 1.0.0 — first Vimkit release
+
+* Rename the project to Vimkit, with its own bundle identifiers
+  (`com.christianvalera.Vimkit`), original icon, and independent App Store
+  identity. Vimkit does not update or replace Vimari.
+* Replace the legacy Safari App Extension with a Manifest V3 Safari Web Extension.
+* Move tab actions to standard WebExtension APIs and settings to `browser.storage.local`.
+* Add a JSON settings page with validation, reset, import, and export support.
 * Add sequence-aware commands with count prefixes and `gt`/`gT` aliases.
 * Add page find, URL and link copying, multi-link hints, URL-level navigation,
   and an accessible shortcut overlay.
@@ -10,15 +20,12 @@ Changelog
   duplication, and cached closed-tab restore.
 * Persist tab activation and a ten-item closed-tab cache using session storage
   when available, with local-storage fallback.
-
-### 3.0.0
-
-* Replace the legacy Safari App Extension with a Manifest V3 Safari Web Extension.
-* Move tab actions to standard WebExtension APIs and settings to `browser.storage.local`.
-* Add a JSON settings page with validation, reset, import, and export support.
+* Ship the MIT notice and acknowledgments inside the app, and add in-app links
+  to the privacy policy and license information.
+* Remove the unused Apache-2.0 licensed `mousetrap.js`.
 * Require macOS 14 and Safari 26.2 or later.
 
-### 2.1.1
+### 2.1.1 — Vimari
 
 * Rebuild for Apple Silicon
 * Fixes excludedUrls handling

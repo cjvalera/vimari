@@ -1,5 +1,5 @@
-const linkHints = require("../Vimari Extension/js/link-hints.js");
-const defaults = require("../Vimari Extension/json/defaultSettings.json");
+const linkHints = require("../Vimkit Extension/js/link-hints.js");
+const defaults = require("../Vimkit Extension/json/defaultSettings.json");
 
 describe("link hint actions", () => {
     function addVisibleLink(url) {

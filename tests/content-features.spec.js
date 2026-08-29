@@ -5,7 +5,7 @@ const {
     TabPicker,
     parentUrl,
     visibleTextMatches
-} = require("../Vimari Extension/js/content-features.js");
+} = require("../Vimkit Extension/js/content-features.js");
 
 describe("content features", () => {
     function makeVisible(element) {

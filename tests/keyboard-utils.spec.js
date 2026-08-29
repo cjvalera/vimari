@@ -1,4 +1,4 @@
-const { getKeyChar, isEscape } = require("../Vimari Extension/js/keyboard-utils.js");
+const { getKeyChar, isEscape } = require("../Vimkit Extension/js/keyboard-utils.js");
 
 describe("keyboard utilities", () => {
     it("uses modern KeyboardEvent.key values for Orion and Safari", () => {

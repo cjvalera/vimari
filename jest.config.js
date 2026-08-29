@@ -1,13 +1,13 @@
 module.exports = {
   testEnvironment: "jsdom",
   setupFiles: [
-    "./Vimari Extension/js/mocks.js",
-    "./Vimari Extension/js/settings.js",
-    "./Vimari Extension/js/WebExtensionCommunicator.js",
-    "./Vimari Extension/js/command-dispatcher.js",
-    "./Vimari Extension/js/content-features.js",
-    "./Vimari Extension/js/keyboard-utils.js",
-    "./Vimari Extension/js/link-hints.js",
-    "./Vimari Extension/js/injected.js"
+    "./Vimkit Extension/js/mocks.js",
+    "./Vimkit Extension/js/settings.js",
+    "./Vimkit Extension/js/WebExtensionCommunicator.js",
+    "./Vimkit Extension/js/command-dispatcher.js",
+    "./Vimkit Extension/js/content-features.js",
+    "./Vimkit Extension/js/keyboard-utils.js",
+    "./Vimkit Extension/js/link-hints.js",
+    "./Vimkit Extension/js/injected.js"
   ]
 };
