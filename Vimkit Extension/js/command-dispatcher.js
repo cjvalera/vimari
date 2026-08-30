@@ -75,6 +75,42 @@ var VimkitCommandDispatcher = (function () {
         return tokens;
     }
 
+    var MODIFIER_SYMBOLS = { ctrl: "\u2303", alt: "\u2325", meta: "\u2318", shift: "\u21e7" };
+    var KEY_LABELS = {
+        down: "\u2193",
+        left: "\u2190",
+        right: "\u2192",
+        up: "\u2191",
+        enter: "\u21a9",
+        esc: "Esc",
+        space: "Space",
+        tab: "Tab"
+    };
+
+    // Renders one key token the way the README writes it: shift folds into an
+    // uppercase letter, other modifiers keep their macOS symbol.
+    function formatToken(token) {
+        var parts = normalizeToken(token).split("+");
+        var key = parts.pop();
+        if (!key) return "";
+
+        var modifiers = parts;
+        var label = KEY_LABELS[key] || key;
+        if (modifiers.indexOf("shift") >= 0 && /^[a-z]$/.test(key)) {
+            label = key.toUpperCase();
+            modifiers = modifiers.filter(function (modifier) { return modifier !== "shift"; });
+        }
+        return MODIFIER_ORDER
+            .filter(function (modifier) { return modifiers.indexOf(modifier) >= 0; })
+            .map(function (modifier) { return MODIFIER_SYMBOLS[modifier]; })
+            .join("") + label;
+    }
+
+    // A sequence reads as one shortcut, so "g g" is shown as "gg".
+    function formatBinding(binding) {
+        return normalizeBinding(binding).map(formatToken).join("");
+    }
+
     function createNode() {
         return { children: new Map(), command: null, binding: null };
     }
@@ -204,6 +240,8 @@ var VimkitCommandDispatcher = (function () {
         CommandDispatcher: CommandDispatcher,
         applyGlobalModifier: applyGlobalModifier,
         eventToToken: eventToToken,
+        formatBinding: formatBinding,
+        formatToken: formatToken,
         normalizeBinding: normalizeBinding,
         normalizeToken: normalizeToken
     };

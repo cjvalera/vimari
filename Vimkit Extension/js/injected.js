@@ -106,7 +106,7 @@ function effectiveBindingsFor(actionName) {
 function showHelp() {
     var commands = Object.keys(commandDescriptions).map(function (actionName) {
         return {
-            bindings: effectiveBindingsFor(actionName),
+            bindings: effectiveBindingsFor(actionName).map(VimkitCommandDispatcher.formatBinding).filter(Boolean),
             description: commandDescriptions[actionName]
         };
     }).filter(function (command) { return command.bindings.length > 0; });

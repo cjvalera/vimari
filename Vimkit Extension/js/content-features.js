@@ -176,7 +176,8 @@ var VimkitContentFeatures = (function () {
         this.modalHost = overlay.host;
         overlay.host.style.setProperty("inset", "0", "important");
         var rows = commands.map(function (command) {
-            return `<tr><td><kbd></kbd></td><td></td></tr>`;
+            var keys = command.bindings.map(function () { return "<kbd></kbd>"; }).join("");
+            return `<tr><td class="keys">${keys}</td><td></td></tr>`;
         }).join("");
         overlay.root.innerHTML = `<style>${BASE_STYLE}
             .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.42);display:grid;place-items:center;padding:24px}
@@ -184,11 +185,15 @@ var VimkitContentFeatures = (function () {
             header{display:flex;justify-content:space-between;align-items:center;position:sticky;top:-20px;background:Canvas;padding:4px 0 12px}
             h2{font-size:19px;margin:0}button{border:0;background:transparent;color:inherit;font-size:22px;cursor:pointer}
             table{border-collapse:collapse;width:100%}td{padding:7px 4px;border-top:1px solid color-mix(in srgb,CanvasText 12%,transparent)}td:first-child{width:38%}
-            kbd{background:color-mix(in srgb,CanvasText 10%,Canvas);border-radius:4px;padding:3px 6px;white-space:pre-wrap}
+            kbd{background:color-mix(in srgb,CanvasText 10%,Canvas);border-radius:4px;padding:3px 6px;white-space:nowrap}
+            .keys kbd{display:inline-block;margin:0 6px 4px 0}
         </style><div class="backdrop"><section class="panel help" role="dialog" aria-modal="true" aria-labelledby="vimkit-help-title"><header><h2 id="vimkit-help-title">Vimkit shortcuts</h2><button aria-label="Close help">×</button></header><table><tbody>${rows}</tbody></table></section></div>`;
         var cells = overlay.root.querySelectorAll("tr");
         commands.forEach(function (command, index) {
-            cells[index].children[0].querySelector("kbd").textContent = command.bindings.join(", ");
+            var keys = cells[index].children[0].querySelectorAll("kbd");
+            command.bindings.forEach(function (binding, position) {
+                keys[position].textContent = binding;
+            });
             cells[index].children[1].textContent = command.description;
         });
         var self = this;

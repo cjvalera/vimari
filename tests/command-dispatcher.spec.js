@@ -2,6 +2,7 @@ const {
     CommandDispatcher,
     applyGlobalModifier,
     eventToToken,
+    formatBinding,
     normalizeBinding
 } = require("../Vimkit Extension/js/command-dispatcher.js");
 
@@ -103,5 +104,30 @@ describe("CommandDispatcher", () => {
         jest.advanceTimersByTime(1000);
         dispatcher.handleToken("g");
         expect(called).not.toHaveBeenCalled();
+    });
+});
+
+describe("formatBinding", () => {
+    it("renders a key sequence as one shortcut without separating spaces", () => {
+        expect(formatBinding("g g")).toBe("gg");
+        expect(formatBinding("] ]")).toBe("]]");
+        expect(formatBinding("g $")).toBe("g$");
+    });
+
+    it("folds shift into an uppercase letter and keeps other modifier symbols", () => {
+        expect(formatBinding("shift+f")).toBe("F");
+        expect(formatBinding("y shift+f")).toBe("yF");
+        expect(formatBinding("alt+f")).toBe("\u2325f");
+        expect(formatBinding("ctrl+alt+d")).toBe("\u2303\u2325d");
+    });
+
+    it("names keys that have no printable character", () => {
+        expect(formatBinding("esc")).toBe("Esc");
+        expect(formatBinding("shift+space")).toBe("\u21e7Space");
+    });
+
+    it("returns an empty label for a missing binding", () => {
+        expect(formatBinding("")).toBe("");
+        expect(formatBinding(undefined)).toBe("");
     });
 });

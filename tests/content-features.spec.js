@@ -79,6 +79,22 @@ describe("content features", () => {
         expect(parentUrl("https://example.com/a/b", true)).toBe("https://example.com/");
     });
 
+    it("gives each help shortcut its own key element", () => {
+        const overlays = new OverlayManager(document, window);
+        overlays.showHelp([
+            { bindings: ["gg", "K"], description: "Go to the top of the page" },
+            { bindings: ["yF"], description: "Copy a link's text" }
+        ]);
+        const root = overlays.modalHost.shadowRoot;
+        const rows = root.querySelectorAll("tr");
+        expect([...rows[0].children[0].querySelectorAll("kbd")].map((key) => key.textContent))
+            .toEqual(["gg", "K"]);
+        expect(rows[0].children[1].textContent).toBe("Go to the top of the page");
+        expect(rows[1].children[0].querySelector("kbd").textContent).toBe("yF");
+        overlays.closeModal();
+        expect(overlays.modalHost).toBeNull();
+    });
+
     it("filters the tab picker by title and URL and activates a result", () => {
         const overlays = new OverlayManager(document, window);
         const picker = new TabPicker(document, overlays);
