@@ -18,6 +18,11 @@ and link to that project's issue tracker; they are kept here for history.
   and an accessible shortcut overlay.
 * Add first/last/previous tab navigation, tab search, native tab creation and
   duplication, and cached closed-tab restore.
+* Add `]]`/`[[` to follow a page's next/previous link, `<<`/`>>` to move the
+  current tab, and `R` for a cache-bypassing reload.
+* Generate shortest prefix-free link hints, colour hints by element kind
+  (link, control, text input), and add `yF`/`ym` to copy a link's text or a
+  Markdown link.
 * Persist tab activation and a ten-item closed-tab cache using session storage
   when available, with local-storage fallback.
 * Ship the MIT notice and acknowledgments inside the app, and add in-app links

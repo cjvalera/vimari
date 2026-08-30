@@ -144,3 +144,56 @@ describe('command mode integration', () => {
         expect(action.mock.calls.length).to.equal(1);
     });
 });
+
+describe('new default bindings dispatch', () => {
+    beforeEach(() => {
+        window.VimkitInjected.enterNormalMode();
+        window.VimkitInjected.setSettings(JSON.parse(JSON.stringify(__vimkitMocks.defaultSettings)));
+    });
+    afterEach(() => jest.restoreAllMocks());
+
+    function press(key, init) {
+        document.body.dispatchEvent(new KeyboardEvent('keydown', Object.assign({ key, bubbles: true }, init || {})));
+    }
+
+    it('runs ]] / [[ / << / >> / R sequences', () => {
+        const spies = ['nextPage', 'previousPage', 'moveTabLeft', 'moveTabRight', 'hardReload', 'copyLinkText', 'copyLinkMarkdown']
+            .map(name => [name, jest.spyOn(window.VimkitInjected.actionMap, name).mockImplementation(() => {})]);
+        press(']'); press(']');
+        press('['); press('[');
+        press('<', { shiftKey: true }); press('<', { shiftKey: true });
+        press('>', { shiftKey: true }); press('>', { shiftKey: true });
+        press('R', { shiftKey: true });
+        press('y'); press('F', { shiftKey: true });
+        press('y'); press('m');
+        spies.forEach(([name, spy]) => expect(spy.mock.calls.length).to.equal(1, name));
+    });
+
+    it('follows the next-page link and reports when none exists', () => {
+        const link = document.createElement('a');
+        link.href = 'https://example.com/page/2';
+        link.rel = 'next';
+        link.click = jest.fn();
+        document.body.appendChild(link);
+        press(']'); press(']');
+        expect(link.click.mock.calls.length).to.equal(1);
+        link.remove();
+        press('['); press('[');
+        const status = document.querySelector('[data-vimkit-overlay="status"]');
+        expect(status.shadowRoot.textContent).to.contain('No previous page link was found.');
+    });
+
+    it('moves tabs through the background with the count prefix', () => {
+        press('3'); press('>', { shiftKey: true }); press('>', { shiftKey: true });
+        const calls = browser.runtime.sendMessage.mock.calls;
+        expect(calls[calls.length - 1][0]).to.eql({ action: 'tabs.move', offset: 3 });
+        press('<', { shiftKey: true }); press('<', { shiftKey: true });
+        expect(calls[calls.length - 1][0]).to.eql({ action: 'tabs.move', offset: -1 });
+    });
+
+    it('hard reload asks the background to bypass the cache', () => {
+        press('R', { shiftKey: true });
+        const calls = browser.runtime.sendMessage.mock.calls;
+        expect(calls[calls.length - 1][0]).to.eql({ action: 'tabs.reload', bypassCache: true });
+    });
+});

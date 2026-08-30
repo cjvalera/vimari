@@ -34,6 +34,8 @@ describe("WebExtension communicator", () => {
         await communicator.requestTabs();
         await communicator.requestActivateTab(12);
         await communicator.requestRestoreTab();
+        await communicator.requestMoveTab(-2);
+        await communicator.requestReloadTab(true);
 
         expect(browser.runtime.sendMessage.mock.calls).toEqual([
             [{ action: "tabs.next", count: 3 }],
@@ -45,7 +47,9 @@ describe("WebExtension communicator", () => {
             [{ action: "tabs.duplicate" }],
             [{ action: "tabs.list" }],
             [{ action: "tabs.activate", tabId: 12 }],
-            [{ action: "tabs.restore" }]
+            [{ action: "tabs.restore" }],
+            [{ action: "tabs.move", offset: -2 }],
+            [{ action: "tabs.reload", bypassCache: true }]
         ]);
     });
 

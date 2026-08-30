@@ -55,6 +55,12 @@ var WebExtensionCommunicator = (function () {
             },
             requestRestoreTab: function () {
                 return send("tabs.restore");
+            },
+            requestMoveTab: function (offset) {
+                return send("tabs.move", { offset: offset || 1 });
+            },
+            requestReloadTab: function (bypassCache) {
+                return send("tabs.reload", { bypassCache: Boolean(bypassCache) });
             }
         };
     };

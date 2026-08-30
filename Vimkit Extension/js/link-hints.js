@@ -12,31 +12,55 @@ var hintMarkerContainingDiv = null;
 // The characters that were typed in while in "link hints" mode.
 var hintKeystrokeQueue = [];
 var linkHintsModeActivated = false;
-var shouldOpenLinkHintInNewTab = false;
-var shouldOpenLinkHintWithQueue = false;
-var shouldCopyLinkHintUrl = false;
+// What happens once a hint is selected. See LinkHintMode.
+var linkHintMode = "open";
 // Whether link hint's "open in current/new tab" setting is currently toggled 
 var openLinkModeToggle = false;
 // Whether we have added to the page the CSS needed to display link hints.
 var linkHintsCssAdded = false;
 
-// We need this as a top-level function because our command system doesn't yet support arguments.
-function activateLinkHintsModeToOpenInNewTab() { activateLinkHintsMode(true, false, false); }
+var LinkHintMode = Object.freeze({
+  open: "open",
+  openNewTab: "openNewTab",
+  openQueue: "openQueue",
+  copyUrl: "copyUrl",
+  copyText: "copyText",
+  copyMarkdown: "copyMarkdown"
+});
 
-function activateLinkHintsModeWithQueue() { activateLinkHintsMode(true, true, false); }
+// Modes that only make sense for elements with an href.
+var LINK_ONLY_MODES = [LinkHintMode.copyUrl, LinkHintMode.copyText, LinkHintMode.copyMarkdown];
 
-function activateLinkHintsModeToCopyUrl() { activateLinkHintsMode(false, false, true); }
+function activateLinkHintsModeToOpenInNewTab() { activateLinkHintsMode(LinkHintMode.openNewTab); }
 
-function activateLinkHintsMode(openInNewTab, withQueue, copyUrl) {
+function activateLinkHintsModeWithQueue() { activateLinkHintsMode(LinkHintMode.openQueue); }
+
+function activateLinkHintsModeToCopyUrl() { activateLinkHintsMode(LinkHintMode.copyUrl); }
+
+function activateLinkHintsModeToCopyText() { activateLinkHintsMode(LinkHintMode.copyText); }
+
+function activateLinkHintsModeToCopyMarkdown() { activateLinkHintsMode(LinkHintMode.copyMarkdown); }
+
+/*
+ * Legacy callers passed (openInNewTab, withQueue, copyUrl) booleans; map them onto a mode name.
+ */
+function resolveLinkHintMode(mode, withQueue, copyUrl) {
+  if (typeof mode === "string" && LinkHintMode[mode]) return mode;
+  if (copyUrl) return LinkHintMode.copyUrl;
+  if (withQueue) return LinkHintMode.openQueue;
+  if (mode === true) return LinkHintMode.openNewTab;
+  return LinkHintMode.open;
+}
+
+function activateLinkHintsMode(mode, withQueue, copyUrl) {
   if (!linkHintsCssAdded)
     addCssToPage(linkHintCss); // linkHintCss is declared by vimiumFrontend.js
   linkHintCssAdded = true;
   linkHintsModeActivated = true;
-  setOpenLinkMode(openInNewTab, withQueue);
-  shouldCopyLinkHintUrl = Boolean(copyUrl);
+  linkHintMode = resolveLinkHintMode(mode, withQueue, copyUrl);
   if (!buildLinkHints()) {
     linkHintsModeActivated = false;
-    shouldCopyLinkHintUrl = false;
+    linkHintMode = LinkHintMode.open;
     if (typeof overlays !== "undefined") overlays.showStatus("No links are available in the viewport.", "error");
     return;
   }
@@ -44,10 +68,16 @@ function activateLinkHintsMode(openInNewTab, withQueue, copyUrl) {
   document.addEventListener("keyup", onKeyUpInLinkHintsMode, true);
 }
 
-function setOpenLinkMode(openInNewTab, withQueue) {
-  shouldOpenLinkHintInNewTab = openInNewTab;
-  shouldOpenLinkHintWithQueue = withQueue;
-  return;
+function isLinkOnlyMode() {
+  return LINK_ONLY_MODES.indexOf(linkHintMode) >= 0;
+}
+
+/*
+ * Shift temporarily swaps "open here" and "open in a new tab" while hint mode is active.
+ */
+function toggleOpenLinkMode() {
+  if (linkHintMode === LinkHintMode.open) linkHintMode = LinkHintMode.openNewTab;
+  else if (linkHintMode === LinkHintMode.openNewTab) linkHintMode = LinkHintMode.open;
 }
 
 /*
@@ -58,14 +88,9 @@ function buildLinkHints() {
   if (visibleElements.length === 0)
     return false;
 
-  // Initialize the number used to generate the character hints to be as many digits as we need to
-  // highlight all the links on the page; we don't want some link hints to have more chars than others.
-  var digitsNeeded = Math.ceil(logXOfBase(visibleElements.length, settings.linkHintCharacters.length));
-  var linkHintNumber = 0;
-  for (var i = 0; i < visibleElements.length; i++) {
-    hintMarkers.push(createMarkerFor(visibleElements[i], linkHintNumber, digitsNeeded));
-    linkHintNumber++;
-  }
+  var hintStrings = generateHintStrings(visibleElements.length, settings.linkHintCharacters);
+  for (var i = 0; i < visibleElements.length; i++)
+    hintMarkers.push(createMarkerFor(visibleElements[i], hintStrings[i]));
   // Note(philc): Append these markers as top level children instead of as child nodes to the link itself,
   // because some clickable elements cannot contain children, e.g. submit buttons. This has the caveat
   // that if you scroll the page and the link has position=fixed, the marker will not stay fixed.
@@ -78,8 +103,6 @@ function buildLinkHints() {
   document.body.appendChild(hintMarkerContainingDiv);
   return true;
 }
-
-function logXOfBase(x, base) { return Math.log(x) / Math.log(base); }
 
 /*
  * Returns all clickable elements that are not hidden and are in the current viewport.
@@ -96,10 +119,11 @@ function getVisibleClickableElements() {
   for (var i = 0; i < elements.length; i++) {
     var element = elements[i];
 
-    if (shouldCopyLinkHintUrl && !element.href)
+    if (isLinkOnlyMode() && !element.href)
       continue;
     var selectedRect = getFirstVisibleRect(element);
     if (selectedRect) {
+      selectedRect.kind = clickableKind(element);
       visibleElements.push(selectedRect);
     }
   }
@@ -118,35 +142,46 @@ function getClickableElements() {
   return clickableElements;
 }
 
-function isClickable(element) {
+var TEXT_INPUT_TYPES = ["text", "search", "password", "email", "url", "tel", "number", "date", "datetime-local",
+  "month", "week", "time"];
+
+/*
+ * Classifies an element as "link" (navigates somewhere), "input" (takes text) or "control"
+ * (buttons, toggles, and everything else that reacts to a click). Returns null when the
+ * element is not clickable at all.
+ */
+function clickableKind(element) {
   var name = element.nodeName.toLowerCase();
   var role = element.getAttribute('role');
+  var type = (element.getAttribute('type') || 'text').toLowerCase();
 
-  return (
-    // normal html elements that can be clicked
-    name === 'a' ||
-    name === 'button' ||
-    name === 'input' && element.getAttribute('type') !== 'hidden' ||
-    name === 'select' ||
-    name === 'textarea' ||
-    // elements having an ARIA role implying clickability
-    // (see http://www.w3.org/TR/wai-aria/roles#widget_roles)
-    role === 'button' ||
-    role === 'checkbox' ||
-    role === 'combobox' ||
-    role === 'link' ||
-    role === 'menuitem' ||
-    role === 'menuitemcheckbox' ||
-    role === 'menuitemradio' ||
-    role === 'radio' ||
-    role === 'tab' ||
-    role === 'textbox' ||
-    // other ways by which we can know an element is clickable
-    element.hasAttribute('onclick') || 
-    settings.detectByCursorStyle && window.getComputedStyle(element).cursor === 'pointer' &&
-      (!element.parentNode || 
-       window.getComputedStyle(element.parentNode).cursor !== 'pointer')
-  );
+  if (name === 'a' || role === 'link')
+    return element.href || element.hasAttribute('href') ? 'link' : 'control';
+  if (name === 'textarea' || role === 'textbox' || role === 'combobox')
+    return 'input';
+  if (name === 'input')
+    return type === 'hidden' ? null : TEXT_INPUT_TYPES.indexOf(type) >= 0 ? 'input' : 'control';
+  if (name === 'button' || name === 'select' ||
+      // elements having an ARIA role implying clickability
+      // (see http://www.w3.org/TR/wai-aria/roles#widget_roles)
+      role === 'button' ||
+      role === 'checkbox' ||
+      role === 'menuitem' ||
+      role === 'menuitemcheckbox' ||
+      role === 'menuitemradio' ||
+      role === 'radio' ||
+      role === 'tab' ||
+      // other ways by which we can know an element is clickable
+      element.hasAttribute('onclick') ||
+      settings.detectByCursorStyle && window.getComputedStyle(element).cursor === 'pointer' &&
+        (!element.parentNode ||
+         window.getComputedStyle(element.parentNode).cursor !== 'pointer'))
+    return 'control';
+  return null;
+}
+
+function isClickable(element) {
+  return clickableKind(element) !== null;
 }
 
 /*
@@ -236,7 +271,7 @@ function isVisible(element, clientRect) {
 function onKeyDownInLinkHintsMode(event) {
   if (event.keyCode === keyCodes.shiftKey && !openLinkModeToggle) {
     // Toggle whether to open link in a new or current tab.
-    setOpenLinkMode(!shouldOpenLinkHintInNewTab, shouldOpenLinkHintWithQueue);
+    toggleOpenLinkMode();
     openLinkModeToggle = true;
   }
 
@@ -267,8 +302,8 @@ function onKeyDownInLinkHintsMode(event) {
 
 function onKeyUpInLinkHintsMode(event) {
   if (event.keyCode === keyCodes.shiftKey && openLinkModeToggle) {
-    // Revert toggle on whether to open link in new or current tab. 
-    setOpenLinkMode(!shouldOpenLinkHintInNewTab, shouldOpenLinkHintWithQueue);
+    // Revert toggle on whether to open link in new or current tab.
+    toggleOpenLinkMode();
     openLinkModeToggle = false;
   }
   event.stopPropagation();
@@ -281,31 +316,31 @@ function onKeyUpInLinkHintsMode(event) {
  * on that link and exit link hints mode.
  */
 function updateLinkHints() {
-  var hintStringLength = hintMarkers[0].getAttribute("hintString").length
   var matchString = hintKeystrokeQueue.join("");
-  var linksMatched = highlightLinkMatches(matchString);
-  if (linksMatched.length === 0) {
+  var markersMatched = highlightLinkMatches(matchString);
+  if (markersMatched.length === 0) {
     deactivateLinkHintsMode();
-  } else if (linksMatched.length === 1 && matchString.length === hintStringLength) {
-    var matchedLink = linksMatched[0];
+  } else if (markersMatched.length === 1 && markersMatched[0].getAttribute("hintString") === matchString) {
+    var matchedLink = markersMatched[0].clickableItem;
     if (isSelectable(matchedLink)) {
       matchedLink.focus();
       // When focusing a textbox, put the selection caret at the end of the textbox's contents.
       matchedLink.setSelectionRange(matchedLink.value.length, matchedLink.value.length);
       deactivateLinkHintsMode();
     } else {
-      if (shouldCopyLinkHintUrl) {
-        clipboardController.copy(matchedLink.href, 'Link URL');
+      var copyValue = linkHintCopyValue(matchedLink, linkHintMode);
+      if (copyValue) {
+        clipboardController.copy(copyValue.text, copyValue.label);
         matchedLink.focus();
         deactivateLinkHintsMode();
         return;
       }
       // When we're opening the link in the current tab, don't navigate to the selected link immediately;
       // we want to give the user some feedback depicting which link they've selected by focusing it.
-      if (shouldOpenLinkHintWithQueue) {
+      if (linkHintMode === LinkHintMode.openQueue) {
         simulateClick(matchedLink, true);
         resetLinkHintsMode();
-      } else if (shouldOpenLinkHintInNewTab) {
+      } else if (linkHintMode === LinkHintMode.openNewTab) {
         simulateClick(matchedLink, true);
         matchedLink.focus();
         deactivateLinkHintsMode();
@@ -315,6 +350,32 @@ function updateLinkHints() {
         deactivateLinkHintsMode();
       }
     }
+  }
+}
+
+function linkHintText(link) {
+  var attribute = function (name) { return typeof link.getAttribute === "function" ? link.getAttribute(name) : ""; };
+  var text = (link.textContent || attribute("aria-label") || attribute("title") || "")
+    .replace(/\s+/g, " ").trim();
+  return text || link.href;
+}
+
+/*
+ * Returns { text, label } for the copy modes, or null when the mode opens the link instead.
+ */
+function linkHintCopyValue(link, mode) {
+  switch (mode) {
+  case LinkHintMode.copyUrl:
+    return { text: link.href, label: "Link URL" };
+  case LinkHintMode.copyText:
+    return { text: linkHintText(link), label: "Link text" };
+  case LinkHintMode.copyMarkdown: {
+    var label = linkHintText(link).replace(/([\[\]\\])/g, "\\$1");
+    var url = String(link.href).replace(/\(/g, "%28").replace(/\)/g, "%29");
+    return { text: "[" + label + "](" + url + ")", label: "Markdown link" };
+  }
+  default:
+    return null;
   }
 }
 
@@ -332,7 +393,7 @@ function isSelectable(element) {
  * will also show link hints which do match but were previously hidden.
  */
 function highlightLinkMatches(searchString) {
-  var linksMatched = [];
+  var markersMatched = [];
   for (var i = 0; i < hintMarkers.length; i++) {
     var linkMarker = hintMarkers[i];
     if (linkMarker.getAttribute("hintString").indexOf(searchString) === 0) {
@@ -340,34 +401,38 @@ function highlightLinkMatches(searchString) {
         linkMarker.style.display = "";
       for (var j = 0; j < linkMarker.childNodes.length; j++)
         linkMarker.childNodes[j].className = (j >= searchString.length) ? "" : "matchingCharacter";
-      linksMatched.push(linkMarker.clickableItem);
+      markersMatched.push(linkMarker);
     } else {
       linkMarker.style.display = "none";
     }
   }
-  return linksMatched;
+  return markersMatched;
 }
 
 /*
- * Converts a number like "8" into a hint string like "JK". This is used to sequentially generate all of
- * the hint text. The hint string will be "padded with zeroes" to ensure its length is equal to numHintDigits.
+ * Generates `count` hint strings from `characters`. The result is prefix-free (no hint is the start of
+ * another), as short as the alphabet allows, and deterministic: the same count and alphabet always
+ * produce the same hints in the same order, so muscle memory holds across visits.
+ *
+ * Hints are grown breadth-first from the empty string, so with 14 characters and 20 links you get
+ * 8 one-character hints and 12 two-character hints instead of 20 two-character hints. The strings are
+ * then sorted and reversed so the first character typed varies the most between neighbouring hints.
  */
-function numberToHintString(number, numHintDigits) {
-  var base = settings.linkHintCharacters.length;
-  var hintString = [];
-  var remainder = 0;
-  do {
-    remainder = number % base;
-    hintString.unshift(settings.linkHintCharacters[remainder]);
-    number -= remainder;
-    number /= Math.floor(base);
-  } while (number > 0);
-
-  // Pad the hint string we're returning so that it matches numHintDigits.
-  var hintStringLength = hintString.length;
-  for (var i = 0; i < numHintDigits - hintStringLength; i++)
-    hintString.unshift(settings.linkHintCharacters[0]);
-  return hintString.reverse().join("");
+function generateHintStrings(count, characters) {
+  var alphabet = String(characters || "").split("").filter(function (character, index, all) {
+    return all.indexOf(character) === index;
+  });
+  if (alphabet.length < 2) alphabet = ["a", "s"];
+  var hints = [""];
+  var offset = 0;
+  while (hints.length - offset < count || hints.length === 1) {
+    var hint = hints[offset++];
+    // Prepend so the working set is suffix-free; reversing each string below makes it prefix-free.
+    for (var i = 0; i < alphabet.length; i++)
+      hints.push(alphabet[i] + hint);
+  }
+  hints = hints.slice(offset, offset + count);
+  return hints.sort().map(function (hint) { return hint.split("").reverse().join(""); });
 }
 
 function simulateClick(link, openInNewTab) {
@@ -391,7 +456,7 @@ function deactivateLinkHintsMode() {
   document.removeEventListener("keydown", onKeyDownInLinkHintsMode, true);
   document.removeEventListener("keyup", onKeyUpInLinkHintsMode, true);
   linkHintsModeActivated = false;
-  shouldCopyLinkHintUrl = false;
+  linkHintMode = LinkHintMode.open;
 }
 
 function resetLinkHintsMode() {
@@ -402,10 +467,9 @@ function resetLinkHintsMode() {
 /*
  * Creates a link marker for the given link.
  */
-function createMarkerFor(link, linkHintNumber, linkHintDigits) {
-  var hintString = numberToHintString(linkHintNumber, linkHintDigits);
+function createMarkerFor(link, hintString) {
   var marker = document.createElement("div");
-  marker.className = "internalVimiumHintMarker vimiumReset";
+  marker.className = "internalVimiumHintMarker vimiumReset vimkitHint-" + (link.kind || "control");
   var innerHTML = [];
   // Make each hint character a span, so that we can highlight the typed characters as you type them.
   for (var i = 0; i < hintString.length; i++)
@@ -427,14 +491,23 @@ function createMarkerFor(link, linkHintNumber, linkHintDigits) {
 
 if (typeof module !== "undefined") {
   module.exports = {
+    LinkHintMode: LinkHintMode,
     activateLinkHintsMode: activateLinkHintsMode,
+    activateLinkHintsModeToCopyMarkdown: activateLinkHintsModeToCopyMarkdown,
+    activateLinkHintsModeToCopyText: activateLinkHintsModeToCopyText,
     activateLinkHintsModeToCopyUrl: activateLinkHintsModeToCopyUrl,
     activateLinkHintsModeWithQueue: activateLinkHintsModeWithQueue,
+    clickableKind: clickableKind,
     deactivateLinkHintsMode: deactivateLinkHintsMode,
+    generateHintStrings: generateHintStrings,
+    linkHintCopyValue: linkHintCopyValue,
     onKeyDownInLinkHintsMode: onKeyDownInLinkHintsMode,
     updateLinkHints: updateLinkHints
   };
+  global.LinkHintMode = LinkHintMode;
   global.activateLinkHintsMode = activateLinkHintsMode;
+  global.activateLinkHintsModeToCopyMarkdown = activateLinkHintsModeToCopyMarkdown;
+  global.activateLinkHintsModeToCopyText = activateLinkHintsModeToCopyText;
   global.activateLinkHintsModeToCopyUrl = activateLinkHintsModeToCopyUrl;
   global.activateLinkHintsModeWithQueue = activateLinkHintsModeWithQueue;
   global.deactivateLinkHintsMode = deactivateLinkHintsMode;

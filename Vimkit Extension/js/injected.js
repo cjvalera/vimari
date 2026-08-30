@@ -20,6 +20,8 @@ var commandDescriptions = {
     newTabHintToggle: "Open a link in a background tab",
     multiLinkHintToggle: "Open multiple links in background tabs",
     copyLinkUrl: "Copy a link URL",
+    copyLinkText: "Copy a link's text",
+    copyLinkMarkdown: "Copy a link as Markdown",
     scrollUp: "Scroll up",
     scrollDown: "Scroll down",
     scrollLeft: "Scroll left",
@@ -37,12 +39,17 @@ var commandDescriptions = {
     goRootUrl: "Go to the site origin",
     goBack: "Go back in history",
     goForward: "Go forward in history",
+    nextPage: "Follow the next-page link",
+    previousPage: "Follow the previous-page link",
     reload: "Reload the page",
+    hardReload: "Reload the page, bypassing the cache",
     tabForward: "Go to the next tab",
     tabBack: "Go to the previous tab",
     firstTab: "Go to the first tab",
     lastTab: "Go to the last tab",
     previousActiveTab: "Return to the previously active tab",
+    moveTabLeft: "Move the current tab left",
+    moveTabRight: "Move the current tab right",
     searchTabs: "Search open tabs",
     closeTab: "Close the current tab",
     restoreTab: "Restore the last closed tab",
@@ -64,6 +71,23 @@ function scrollByCount(x, y, meta) {
 
 function navigateUpUrl(toOrigin) {
     window.location.assign(VimkitContentFeatures.parentUrl(window.location.href, toOrigin));
+}
+
+function followPaginationLink(direction) {
+    var link = VimkitContentFeatures.findPaginationLink(document, direction);
+    if (!link) {
+        overlays.showStatus("No " + (direction === "next" ? "next" : "previous") + " page link was found.", "error");
+        return;
+    }
+    if (typeof link.click === "function" && link.tagName.toLowerCase() !== "link") link.click();
+    else window.location.assign(link.href);
+}
+
+function hardReload() {
+    reportRequest(extensionCommunicator.requestReloadTab(true)).then(function (response) {
+        // Older engines without tabs.reload still get a plain reload.
+        if (!response || !response.ok) window.location.reload();
+    });
 }
 
 function effectiveBindingsFor(actionName) {
@@ -99,10 +123,12 @@ function searchTabs() {
 }
 
 var actionMap = {
-    hintToggle: function () { activateLinkHintsMode(false, false, false); },
-    newTabHintToggle: function () { activateLinkHintsMode(true, false, false); },
-    multiLinkHintToggle: function () { activateLinkHintsMode(true, true, false); },
-    copyLinkUrl: function () { activateLinkHintsModeToCopyUrl(); },
+    hintToggle: function () { activateLinkHintsMode(LinkHintMode.open); },
+    newTabHintToggle: function () { activateLinkHintsMode(LinkHintMode.openNewTab); },
+    multiLinkHintToggle: function () { activateLinkHintsMode(LinkHintMode.openQueue); },
+    copyLinkUrl: function () { activateLinkHintsMode(LinkHintMode.copyUrl); },
+    copyLinkText: function () { activateLinkHintsMode(LinkHintMode.copyText); },
+    copyLinkMarkdown: function () { activateLinkHintsMode(LinkHintMode.copyMarkdown); },
     tabForward: function (meta) {
         if (meta.binding.endsWith("g t") && meta.countProvided) reportRequest(extensionCommunicator.requestTabIndex(meta.count - 1));
         else reportRequest(extensionCommunicator.requestTabForward(meta.count));
@@ -111,6 +137,8 @@ var actionMap = {
     firstTab: function () { reportRequest(extensionCommunicator.requestFirstTab()); },
     lastTab: function () { reportRequest(extensionCommunicator.requestLastTab()); },
     previousActiveTab: function () { reportRequest(extensionCommunicator.requestPreviousActiveTab()); },
+    moveTabLeft: function (meta) { reportRequest(extensionCommunicator.requestMoveTab(-meta.count)); },
+    moveTabRight: function (meta) { reportRequest(extensionCommunicator.requestMoveTab(meta.count)); },
     searchTabs: searchTabs,
     restoreTab: function () { reportRequest(extensionCommunicator.requestRestoreTab()); },
     scrollDown: function (meta) { scrollByCount(0, settings.scrollSize, meta); },
@@ -120,6 +148,9 @@ var actionMap = {
     goBack: function (meta) { window.history.go(-meta.count); },
     goForward: function (meta) { window.history.go(meta.count); },
     reload: function () { window.location.reload(); },
+    hardReload: hardReload,
+    nextPage: function () { followPaginationLink("next"); },
+    previousPage: function () { followPaginationLink("previous"); },
     openTab: function () { reportRequest(extensionCommunicator.requestCreateTab(settings.openTabUrl)); },
     closeTab: function () { reportRequest(extensionCommunicator.requestCloseTab()); },
     duplicateTab: function () { reportRequest(extensionCommunicator.requestDuplicateTab()); },

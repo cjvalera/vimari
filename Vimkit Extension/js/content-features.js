@@ -75,6 +75,68 @@ var VimkitContentFeatures = (function () {
         return url.href;
     }
 
+    var PAGINATION_PATTERNS = {
+        next: ["next", "more", "newer", "\u203a", "\u2192", "\u00bb", "\u226b", ">>", ">"],
+        previous: ["prev", "previous", "back", "older", "\u2039", "\u2190", "\u00ab", "\u226a", "<<", "<"]
+    };
+
+    function paginationText(element) {
+        var text = [element.textContent, element.getAttribute("aria-label"), element.getAttribute("title")]
+            .filter(Boolean)
+            .join(" ");
+        return text.toLowerCase().replace(/\s+/g, " ").trim();
+    }
+
+    function paginationScore(text, pattern) {
+        if (!text) return 0;
+        var stripped = text.replace(/^[\s\-\u2013\u2014.,;:!()\[\]{}|]+|[\s\-\u2013\u2014.,;:!()\[\]{}|]+$/g, "");
+        if (stripped === pattern) return 3;
+        if (/^[a-z]/.test(pattern)) {
+            // A word only counts at the start or end of the text ("Next page", "Go back"),
+            // never in the middle of a sentence, which would match ordinary headlines.
+            var boundary = "[\\s.,;:!\\-\\u2013\\u2014()\\[\\]|/]";
+            var starts = new RegExp("^" + pattern + "(?=" + boundary + "|$)");
+            var ends = new RegExp("(^|" + boundary + ")" + pattern + "$");
+            return starts.test(stripped) || ends.test(stripped) ? 2 : 0;
+        }
+        return stripped.indexOf(pattern) >= 0 && stripped.length <= pattern.length + 12 ? 2 : 0;
+    }
+
+    /*
+     * Finds the link that most likely leads to the next or previous page.
+     * rel="next"/"prev" wins outright; otherwise the anchor text is scored
+     * against a fixed pattern list, earliest pattern first.
+     */
+    function findPaginationLink(documentObject, direction) {
+        var rel = direction === "next" ? "next" : "prev";
+        var relSelector = 'link[rel~="' + rel + '"], a[rel~="' + rel + '"]' +
+            (rel === "prev" ? ', link[rel~="previous"], a[rel~="previous"]' : "");
+        var relMatch = documentObject.querySelector(relSelector);
+        if (relMatch && relMatch.href) return relMatch;
+
+        var anchors = Array.prototype.slice.call(documentObject.querySelectorAll("a[href], [role=link][href]"))
+            .filter(function (anchor) {
+                var href = anchor.getAttribute("href") || "";
+                return href && !/^(#|javascript:)/i.test(href);
+            });
+        // Next links tend to sit at the bottom of the page, previous links at the top.
+        if (direction === "next") anchors.reverse();
+        var patterns = PAGINATION_PATTERNS[direction === "next" ? "next" : "previous"];
+        for (var i = 0; i < patterns.length; i++) {
+            var best = null;
+            var bestScore = 0;
+            for (var j = 0; j < anchors.length; j++) {
+                var score = paginationScore(paginationText(anchors[j]), patterns[i]);
+                if (score > bestScore) {
+                    best = anchors[j];
+                    bestScore = score;
+                }
+            }
+            if (best) return best;
+        }
+        return null;
+    }
+
     function OverlayManager(documentObject, windowObject) {
         this.document = documentObject;
         this.window = windowObject;
@@ -367,6 +429,7 @@ var VimkitContentFeatures = (function () {
         ClipboardController: ClipboardController,
         FindMode: FindMode,
         OverlayManager: OverlayManager,
+        findPaginationLink: findPaginationLink,
         TabPicker: TabPicker,
         isExcludedTextNode: isExcludedTextNode,
         isVisibleTextNode: isVisibleTextNode,

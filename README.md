@@ -80,6 +80,11 @@ can be cancelled with <kbd>Esc</kbd>. Counts from 1–999 work with scrolling,
 history, and relative tab navigation; for example, <kbd>5</kbd><kbd>j</kbd>
 scrolls five steps and <kbd>3</kbd><kbd>g</kbd><kbd>t</kbd> selects the third tab.
 
+Link hints are colour-coded: yellow for links, blue for buttons and other
+controls, green for text fields. Hints use the fewest characters the
+`linkHintCharacters` alphabet allows, so on sparse pages a single key selects
+a link; the assignment is deterministic for a given number of hints.
+
 
 ### Keyboard Bindings
 
@@ -90,6 +95,8 @@ These bindings are the ones set by default, however you are able to change them 
     F       Toggle links (open link in new tab)
     ⌥f      Toggle links (keep open for multiple background tabs)
     yf      Copy a hinted link URL
+    yF      Copy a hinted link's text
+    ym      Copy a hinted link as a Markdown link
     k       Scroll up
     j       Scroll down
     h       Scroll left
@@ -111,6 +118,9 @@ These bindings are the ones set by default, however you are able to change them 
     H       History back
     L       History forward
     r       Reload
+    R       Reload, bypassing the cache
+    ]]      Follow the page's "next" link
+    [[      Follow the page's "previous" link
     w       Next tab
     q       Previous tab
     gt      Next tab (or select a tab when prefixed by a count)
@@ -118,6 +128,8 @@ These bindings are the ones set by default, however you are able to change them 
     g0      First tab
     g$      Last tab
     ^       Previously active tab
+    <<      Move the current tab left
+    >>      Move the current tab right
     T       Search open tabs
     x       Close current tab
     X       Restore the last closed tab

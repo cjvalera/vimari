@@ -105,3 +105,42 @@ describe("content features", () => {
         expect(overlays.showStatus).toHaveBeenCalledWith(expect.stringContaining("clipboard"), "error");
     });
 });
+
+describe("pagination links", () => {
+    const { findPaginationLink } = require("../Vimkit Extension/js/content-features.js");
+
+    afterEach(() => { document.head.innerHTML = ""; document.body.innerHTML = ""; });
+
+    it("prefers rel=next and rel=prev", () => {
+        document.body.innerHTML = `
+            <a id="text-next" href="/p3">Next</a>
+            <a id="rel-next" rel="next" href="/p2">Onward</a>
+            <a id="rel-prev" rel="prev" href="/p0">Backward</a>`;
+        expect(findPaginationLink(document, "next").id).toBe("rel-next");
+        expect(findPaginationLink(document, "previous").id).toBe("rel-prev");
+    });
+
+    it("scores link text when rel is missing, preferring exact matches and later next links", () => {
+        document.body.innerHTML = `
+            <a id="prev" href="/p0">&laquo; Previous</a>
+            <a id="nextish" href="/about">What comes next for us</a>
+            <a id="headline" href="/story">A single-folder back end you write in TypeScript</a>
+            <a id="next-top" href="/p2">Next</a>
+            <a id="next-bottom" href="/p2?b">Next</a>
+            <a id="skip" href="#">Next</a>`;
+        expect(findPaginationLink(document, "next").id).toBe("next-bottom");
+        expect(findPaginationLink(document, "previous").id).toBe("prev");
+        document.getElementById("prev").remove();
+        expect(findPaginationLink(document, "previous")).toBeNull();
+    });
+
+    it("falls back to symbols and aria labels", () => {
+        document.body.innerHTML = `
+            <a id="older" href="/older" aria-label="Older posts">&larr;</a>
+            <a id="arrow" href="/p2">&raquo;</a>`;
+        expect(findPaginationLink(document, "next").id).toBe("arrow");
+        expect(findPaginationLink(document, "previous").id).toBe("older");
+        document.body.innerHTML = `<a href="/x">Unrelated</a>`;
+        expect(findPaginationLink(document, "next")).toBeNull();
+    });
+});

@@ -7,10 +7,12 @@ const VimkitAction = Object.freeze({
     firstTab: "tabs.first",
     lastTab: "tabs.last",
     listTabs: "tabs.list",
+    moveTab: "tabs.move",
     nextTab: "tabs.next",
     openBackgroundTab: "tabs.openBackground",
     previousActiveTab: "tabs.previousActive",
     previousTab: "tabs.previous",
+    reloadTab: "tabs.reload",
     restoreTab: "tabs.restore"
 });
 
@@ -151,6 +153,23 @@ async function activateRelativeTab(sender, offset) {
     if (tabs[nextIndex].id !== currentTab.id) await browser.tabs.update(tabs[nextIndex].id, { active: true });
 }
 
+async function moveRelativeTab(sender, offset) {
+    const { currentTab, tabs } = await tabsInSenderWindow(sender);
+    const currentIndex = tabs.findIndex(tab => tab.id === currentTab.id);
+    if (currentIndex < 0) throw new Error("The current tab is no longer available.");
+    if (!hasFunction(browser.tabs, "move")) throw new Error("Moving tabs is not supported by this browser.");
+    const normalizedOffset = Number.isFinite(offset) ? Math.trunc(offset) : 1;
+    const targetIndex = Math.max(0, Math.min(tabs.length - 1, currentIndex + normalizedOffset));
+    if (targetIndex === currentIndex) return;
+    await browser.tabs.move(currentTab.id, { index: tabs[targetIndex].index });
+}
+
+async function reloadTab(sender, bypassCache) {
+    const currentTab = requireSenderTab(sender);
+    if (!hasFunction(browser.tabs, "reload")) throw new Error("Reloading tabs is not supported by this browser.");
+    await browser.tabs.reload(currentTab.id, { bypassCache: Boolean(bypassCache) });
+}
+
 async function activateTabIndex(sender, index) {
     const { tabs } = await tabsInSenderWindow(sender);
     const normalized = Math.max(0, Math.min(tabs.length - 1, Math.trunc(index)));
@@ -213,6 +232,12 @@ async function handleRuntimeMessage(request, sender) {
             break;
         case VimkitAction.activateTabIndex:
             await activateTabIndex(sender, Number(request.index));
+            break;
+        case VimkitAction.moveTab:
+            await moveRelativeTab(sender, Math.trunc(request.offset || 1));
+            break;
+        case VimkitAction.reloadTab:
+            await reloadTab(sender, request.bypassCache);
             break;
         case VimkitAction.firstTab:
             await activateTabIndex(sender, 0);
@@ -318,7 +343,9 @@ if (typeof module !== "undefined") {
         cacheClosedTab,
         handleRuntimeMessage,
         initializeState,
+        moveRelativeTab,
         preferredStorageArea,
+        reloadTab,
         recordActivation,
         requireSenderTab,
         snapshotTab,

@@ -111,6 +111,35 @@ describe("WebExtension background actions", () => {
         });
     });
 
+    it("moves the current tab by an offset and clamps at the edges", async () => {
+        browser.tabs.move = jest.fn(() => Promise.resolve());
+        browser.tabs.query.mockResolvedValue([
+            { id: 1, windowId: 8, index: 0 },
+            { id: 2, windowId: 8, index: 1 },
+            { id: 3, windowId: 8, index: 2 }
+        ]);
+
+        await expect(handleRuntimeMessage({ action: "tabs.move", offset: 1 }, sender)).resolves.toEqual({ ok: true });
+        expect(browser.tabs.move).toHaveBeenCalledWith(2, { index: 2 });
+
+        await handleRuntimeMessage({ action: "tabs.move", offset: -5 }, sender);
+        expect(browser.tabs.move).toHaveBeenLastCalledWith(2, { index: 0 });
+
+        browser.tabs.move.mockClear();
+        await handleRuntimeMessage({ action: "tabs.move", offset: 3 }, { tab: { id: 3, windowId: 8 } });
+        expect(browser.tabs.move).not.toHaveBeenCalled();
+        delete browser.tabs.move;
+    });
+
+    it("reloads the current tab bypassing the cache", async () => {
+        browser.tabs.reload = jest.fn(() => Promise.resolve());
+        await expect(handleRuntimeMessage({ action: "tabs.reload", bypassCache: true }, sender)).resolves.toEqual({ ok: true });
+        expect(browser.tabs.reload).toHaveBeenCalledWith(2, { bypassCache: true });
+        delete browser.tabs.reload;
+        await expect(handleRuntimeMessage({ action: "tabs.reload", bypassCache: true }, sender))
+            .resolves.toEqual({ ok: false, error: "Reloading tabs is not supported by this browser." });
+    });
+
     it("uses native create and duplicate tab APIs", async () => {
         await handleRuntimeMessage({ action: "tabs.create", url: "https://example.com/new" }, sender);
         expect(browser.tabs.create).toHaveBeenCalledWith({
